@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Software Architect Learning Guide</title>
+  <style>
+    :root{
+      --bg:#0b1220;        /* page background */
+      --panel:#0f172a;     /* cards/nav background */
+      --muted:#94a3b8;     /* secondary text */
+      --text:#e6edf6;      /* primary text */
+      --accent:#22d3ee;    /* cyan */
+      --accent-2:#a78bfa;  /* violet */
+      --ok:#22c55e; --bad:#ef4444; --warn:#eab308;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background:linear-gradient(180deg, #0b1220 0%, #0b1220 40%, #0e1628 100%);
+      color:var(--text);
+    }
+    /* --- Topbar --- */
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: saturate(180%) blur(10px);
+      background:rgba(15,23,42,.85);
+      border-bottom:1px solid rgba(148,163,184,.15);
+    }
+    .topbar{display:flex; gap:.75rem; align-items:center; padding:.75rem 1rem; flex-wrap:wrap}
+    .brand{font-weight:700; letter-spacing:.3px}
+    .search{flex:1; min-width:180px}
+    .search input{
+      width:100%; padding:.65rem .9rem; border-radius:999px; border:1px solid rgba(148,163,184,.25);
+      background:#0b1220; color:var(--text);
+    }
+    .filters{display:flex; gap:.5rem; align-items:center}
+    select, button, .chip{background:#0b1220; color:var(--text); border:1px solid rgba(148,163,184,.25); border-radius:999px; padding:.55rem .8rem}
+    button{cursor:pointer}
+    button:hover, .chip:hover{border-color:rgba(34,211,238,.6)}
+
+    /* --- Topic scroller --- */
+    .topic-strip{display:flex; gap:.5rem; overflow:auto; padding:.5rem 1rem 1rem; scroll-snap-type:x mandatory}
+    .topic-strip::-webkit-scrollbar{height:8px}
+    .topic-strip::-webkit-scrollbar-thumb{background:rgba(148,163,184,.3); border-radius:999px}
+    .topic-btn{scroll-snap-align:start; white-space:nowrap}
+
+    /* --- Layout --- */
+    main{max-width:1200px; margin:1.25rem auto; padding:0 1rem; display:grid; grid-template-columns: 300px 1fr; gap:1rem}
+    @media (max-width: 980px){ main{grid-template-columns:1fr} }
+
+    /* --- Sidebar (subtopics for current category) --- */
+    .sidebar{background:var(--panel); border:1px solid rgba(148,163,184,.15); border-radius:var(--radius); padding:1rem; position:sticky; top:84px; height:fit-content}
+    .sidebar h3{margin:.25rem 0 .5rem; color:var(--muted); font-weight:600; font-size:.9rem; letter-spacing:.04em}
+    .sidelist{display:flex; flex-direction:column; gap:.4rem; max-height:70vh; overflow:auto}
+    .sidelink{border-radius:10px; padding:.45rem .6rem; text-decoration:none; color:var(--text); border:1px solid transparent}
+    .sidelink:hover{background:#0b1220; border-color:rgba(148,163,184,.25)}
+    .sidelink.active{background:linear-gradient(90deg, rgba(34,211,238,.13), rgba(167,139,250,.13)); border-color:rgba(34,211,238,.5)}
+
+    /* --- Content cards --- */
+    .card{background:var(--panel); border:1px solid rgba(148,163,184,.15); border-radius:var(--radius); padding:1.2rem}
+    .title{display:flex; align-items:center; gap:.6rem}
+    .title .tag{font-size:.75rem; color:var(--muted); border:1px dashed rgba(148,163,184,.35); padding:.15rem .5rem; border-radius:999px}
+    h2{margin:.2rem 0 .6rem}
+    h4{margin:1.1rem 0 .35rem}
+    p{line-height:1.65}
+    ul{line-height:1.65; margin:.25rem 0 .75rem 1.1rem}
+    .grid{display:grid; gap:1rem; grid-template-columns:repeat(2, minmax(0, 1fr))}
+    @media (max-width: 720px){ .grid{grid-template-columns:1fr} }
+    .note{font-size:.9rem; color:var(--muted)}
+    .good{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+
+    /* --- Code blocks --- */
+    pre{position:relative; background:#0b1220; border:1px solid rgba(148,163,184,.2); color:#e6edf6; border-radius:12px; padding:1rem; overflow:auto}
+    code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:.92rem}
+    .copy{position:absolute; top:.5rem; right:.5rem; border-radius:8px}
+
+    /* --- Utilities --- */
+    .hidden{display:none}
+    .muted{color:var(--muted)}
+    .actions{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.5rem 0 1rem}
+    .pill{background:transparent; border:1px solid rgba(148,163,184,.3); padding:.2rem .55rem; border-radius:999px; font-size:.8rem}
+    .kbd{display:inline-block; border:1px solid rgba(148,163,184,.35); border-bottom-width:2px; border-radius:6px; padding:.05rem .3rem; font-size:.8rem; background:#0b1220}
+    .footer{color:var(--muted); text-align:center; padding:2rem 1rem 3rem}
+    a{color:var(--accent)}
+    .category-label{font-size:.75rem; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">🧭 Software Architect Guide</div>
+      <div class="search"><input id="search" placeholder="Search topics (e.g. 'CQRS', 'Kubernetes', 'DRY') — press Enter" /></div>
+      <div class="filters">
+        <select id="categoryFilter" title="Filter by category"></select>
+        <button id="printBtn" title="Print current topic">🖨️ Print</button>
+        <button id="expandAllBtn" title="Show all topics">📚 Expand</button>
+        <button id="collapseAllBtn" title="Show only selected">🗂️ Collapse</button>
+      </div>
+    </div>
+    <div class="topic-strip" id="topicStrip" aria-label="All topics"></div>
+  </header>
+
+  <main>
+    <aside class="sidebar">
+      <h3 id="sideTitle">Subtopics</h3>
+      <div class="sidelist" id="sideList"></div>
+      <div class="note" style="margin-top:.75rem">Tip: press <span class="kbd">/</span> to jump to search. Your last opened topic is remembered.</div>
+    </aside>
+
+    <section id="contentArea">
+      <!-- Sections are injected below. Each section uses data attributes for title & category. -->
+
+      <!-- ===== Fundamentals ===== -->
+      <article class="card topic" id="fundamentals" data-title="Core Software Architecture Fundamentals" data-category="Fundamentals">
+        <div class="title"><span class="tag">Fundamentals</span><h2>Core Software Architecture Fundamentals</h2></div>
+        <h4>Key Concept</h4>
+        <p>Software architecture is the set of fundamental choices made during the development of a software system. It defines the high-level structure of the system, the discipline of its creation, and the evolution of its components. The goal is to design a system that is not only <em>correct</em> and <em>functional</em>, but also <em>evolvable</em>, <em>maintainable</em>, and <em>valuable</em> to the business over the long term.</p>
+
+        <h4>Core Learning</h4>
+        <p>The most important takeaway is that architecture is a game of <strong>trade-offs</strong>. There is no single "best" architecture. A good architect understands the business goals and constraints, identifies the critical quality attributes (non-functional requirements), and makes deliberate, documented decisions to optimize for them. This involves balancing competing concerns like performance vs. cost, or security vs. development speed.</p>
+
+        <div class="grid">
+          <div>
+            <h4>Key Pillars</h4>
+            <ul>
+              <li><strong>Model the Domain:</strong> Before writing code, understand the business domain and model its entities and processes. This is a cornerstone of <a href="#" onclick="showTopic('ddd', true); return false;">Domain-Driven Design (DDD)</a>.</li>
+              <li><strong>Define Quality Attributes (NFRs):</strong> Explicitly define and prioritize non-functional requirements like performance, security, and reliability. See <a href="#" onclick="showTopic('nfrs', true); return false;">NFRs</a>.</li>
+              <li><strong>Make Trade-offs Explicit:</strong> Use tools like <a href="#" onclick="showTopic('adr', true); return false;">Architecture Decision Records (ADRs)</a> to document significant decisions and their rationale.</li>
+              <li><strong>Use Bounded Contexts:</strong> Break down complex systems into manageable, independent parts, each with its own domain model. This is a core concept from DDD.</li>
+              <li><strong>Automate Everything:</strong> A mature architecture relies on robust automation for building, testing, deploying, and monitoring the system. See <a href="#" onclick="showTopic('cicd', true); return false;">CI/CD</a> and <a href="#" onclick="showTopic('observability', true); return false;">Observability</a>.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Checklist for a Sound Architecture</h4>
+            <ul>
+              <li><strong>Clear Ownership:</strong> Is there a clear owner for every component, service, or module?</li>
+              <li><strong>Stable Interfaces:</strong> Are the contracts between components well-defined and stable, allowing implementations to change without breaking clients?</li>
+              <li><strong>Data Lifecycle Management:</strong> Is the flow and lifecycle of data (create, read, update, delete, archive) clearly understood and documented?</li>
+              <li><strong>Security by Design:</strong> Is security a foundational part of the design (e.g., least privilege, encryption by default), not an afterthought? See <a href="#" onclick="showTopic('secure-design', true); return false;">Secure Design</a>.</li>
+              <li><strong>Failure Planning:</strong> Have potential failure modes been identified, and is the system designed to be resilient? Are there plans for disaster recovery and chaos engineering drills? See <a href="#" onclick="showTopic('ha-dr', true); return false;">High Availability & DR</a>.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="card topic" id="design-principles" data-title="Software Design Principles" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>Software Design Principles</h2></div>
+        <h4>Key Concept</h4>
+        <p>Software design principles are guidelines and heuristics for creating high-quality, maintainable, and understandable software. Unlike architectural styles, which define the overall structure, design principles operate at a lower level, guiding the design of classes, modules, and functions. They help manage complexity and reduce the cost of change over time.</p>
+
+        <h4>Core Learning</h4>
+        <p>The core idea is to write code that is easy to change. This is achieved by promoting loose coupling, high cohesion, and clear separation of concerns. Applying these principles pragmatically is key; they are not rigid laws. Always prefer a design that is clear and simple over one that is overly engineered and clever. The goal is to solve the problem at hand while keeping the door open for future evolution.</p>
+
+        <h4>Key Principles Explained</h4>
+        <ul>
+          <li><strong><a href="#" onclick="showTopic('solid', true); return false;">SOLID</a></strong>: A collection of five object-oriented design principles that are fundamental to building robust and maintainable systems. They are Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion.</li>
+          <li><strong><a href="#" onclick="showTopic('dry', true); return false;">DRY (Don’t Repeat Yourself)</a></strong>: Aims to have a single, authoritative source of truth for every piece of knowledge or logic in the system.</li>
+          <li><strong><a href="#" onclick="showTopic('kiss', true); return false;">KISS (Keep It Simple, Stupid)</a></strong>: Advocates for keeping solutions as simple as possible. Avoid accidental complexity and choose the most straightforward approach that works.</li>
+          <li><strong><a href="#" onclick="showTopic('yagni', true); return false;">YAGNI (You Aren’t Gonna Need It)</a></strong>: A principle of extreme programming that states you should not add functionality until it is deemed necessary. Avoid speculative features.</li>
+          <li><strong><a href="#" onclick="showTopic('soc', true); return false;">Separation of Concerns (SoC)</a></strong>: Dictates that a system should be partitioned into distinct parts (concerns) with minimal overlap in functionality. For example, separating UI, business logic, and data access.</li>
+          <li><strong><a href="#" onclick="showTopic('di', true); return false;">Dependency Inversion Principle (DIP)</a></strong>: A key part of SOLID, this principle states that high-level modules should not depend on low-level modules; both should depend on abstractions. This decouples the code and makes it more flexible.</li>
+        </ul>
+      </article>
+
+      <!-- ===== DRY / KISS / YAGNI / SoC / DI ===== -->
+      <article class="card topic" id="dry" data-title="DRY (Don’t Repeat Yourself)" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>DRY (Don’t Repeat Yourself)</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>The DRY principle states that "Every piece of knowledge must have a single, unambiguous, authoritative representation within a system." It's about avoiding redundancy in your codebase to improve maintainability, reduce bugs, and increase clarity. This applies not just to code, but also to documentation, database schemas, and build scripts.</p>
+
+        <h4>Core Learning</h4>
+        <p>The goal of DRY is to centralize logic and data so that any modification only needs to happen in one place. When you have duplicate code, a change in requirements means you have to find and update every single instance, which is error-prone. A single source of truth is easier to manage and reason about.</p>
+        
+        <h4>Basics with Example</h4>
+        <p>Imagine you have a web application where the same validation logic for an email address is written in JavaScript on the client-side and in C# on the server-side. If the validation rules change (e.g., to allow a new top-level domain), you have to update it in both places. A better, DRY-er approach is to have a shared library or a single source of truth for this logic.</p>
+        <p>The provided C# example is a good illustration within a single class:</p>
+        <pre><button class="copy">Copy</button><code>public class InvoiceService {
+  // The authoritative representation of the tax rate.
+  // If the tax rate changes, you only need to update this one line.
+  private const decimal TaxRate = 0.15m; 
+
+  // This function reuses the TaxRate constant.
+  public decimal CalculateTax(decimal amount) {
+    return amount * TaxRate;
+  }
+
+  // This function reuses the CalculateTax method, avoiding repeated logic.
+  public decimal CalculateFinal(decimal amount) {
+    return amount + CalculateTax(amount);
+  }
+}</code></pre>
+        
+        <h4>Flow of Thought for Applying DRY</h4>
+        <ol>
+          <li><strong>Identify Repetition:</strong> Look for identical or very similar blocks of code, magic strings/numbers, or configuration values across the application.</li>
+          <li><strong>Abstract the Knowledge:</strong> Create a single, authoritative source for that piece of knowledge. This could be a function, a constant, a configuration file, or a shared library.</li>
+          <li><strong>Replace Duplicates:</strong> Replace all instances of the repeated knowledge with a reference to the new, single source.</li>
+        </ol>
+
+        <h4>Watch-outs</h4>
+        <ul>
+          <li class="warn"><strong>False DRY (Accidental Duplication):</strong> Be careful not to abstract things that look similar but represent different concepts. Forcing them into a single abstraction can lead to complex, coupled code that is hard to change. This is a common pitfall and is often worse than the initial duplication. For instance, a validation rule that a product name and a customer name must both be 50 characters long might be a coincidence, not a shared business rule.</li>
+          <li>This principle is closely related to <a href="#" onclick="showTopic('soc', true); return false;">Separation of Concerns</a>, as both aim to create more modular and maintainable code.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="kiss" data-title="KISS (Keep It Simple, Stupid)" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>KISS (Keep It Simple)</h2></div>
+        <h4>Key Concept</h4>
+        <p>KISS is a design principle that states that most systems work best if they are kept simple rather than made complicated; therefore, simplicity should be a key goal in design, and unnecessary complexity should be avoided. It's about choosing the most straightforward solution that effectively solves the problem.</p>
+
+        <h4>Core Learning</h4>
+        <p>Complexity is the enemy of maintainability. A simple, clear solution is easier to understand, debug, and modify than a complex and clever one. Before adding a new feature, a new dependency, or a new layer of abstraction, ask yourself: "Is there a simpler way to do this?" Often, the most elegant solution is the one with the fewest moving parts.</p>
+
+        <h4>Examples of Applying KISS</h4>
+        <ul>
+          <li><strong>Prefer Data over Code:</strong> Instead of writing a complex `if/else if/else` or `switch` statement to handle different cases, see if you can drive the logic from a simple data structure like a dictionary or a map.</li>
+          <li><strong>Choose Boring Technology:</strong> Don't adopt a new, trendy technology if a well-understood, "boring" one can do the job just as well. The novelty of a new tool often comes with a hidden cost in learning, hiring, and operational complexity.</li>
+          <li><strong>Remove, Don't Add:</strong> When faced with a complex system, see if you can simplify it by removing code, features, or dependencies rather than adding more on top.</li>
+        </ul>
+
+        <h4>Bangladesh Analogy</h4>
+        <p class="note">A common analogy in our local context: Don’t design and build a complex flyover to solve a traffic problem if a well-placed roundabout would manage the flow of traffic effectively for the foreseeable future. Start with the simplest viable solution.</p>
+
+        <h4>Related Principles</h4>
+        <ul>
+          <li>KISS is closely related to <a href="#" onclick="showTopic('yagni', true); return false;">YAGNI</a>, as both principles help to prevent over-engineering.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="yagni" data-title="YAGNI (You Aren’t Gonna Need It)" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>YAGNI (You Aren’t Gonna Need It)</h2></div>
+        <h4>Key Concept</h4>
+        <p>YAGNI is a principle from Extreme Programming (XP) that advises developers to "always implement things when you actually need them, never when you just foresee that you need them." It is a strong argument against speculative development and building features that are not immediately required.</p>
+
+        <h4>Core Learning</h4>
+        <p>The core idea is to save time and resources by not building features that might never be used. The future is uncertain, and our predictions about what will be needed are often wrong. By focusing only on the current requirements, you can deliver value faster and avoid cluttering the codebase with unnecessary, untested, and un-maintained code. It takes discipline to apply YAGNI, as it often feels counter-intuitive to not build for the future.</p>
+
+        <h4>Examples of Applying YAGNI</h4>
+        <ul>
+          <li><strong>No Speculative Extensibility:</strong> Avoid adding extension points, hooks, or abstract base classes for features that no user has asked for. It's often harder to build a correct abstraction without a concrete use case.</li>
+          <li><strong>Keep APIs Minimal:</strong> When designing an API, only add the parameters and methods that are required for the current use case. It is easier to add a new parameter later than to remove an existing one that is being used by clients.</li>
+          <li><strong>Don't Add Unused Options:</strong> Avoid adding configuration options or settings for things that are not needed right now. Every option adds to the complexity of testing and maintenance.</li>
+        </ul>
+
+        <h4>When to Break YAGNI?</h4>
+        <p class="note">While YAGNI is a powerful principle, there are exceptions. For example, when designing a public API that will be used by many clients, it might be worth investing in some forward-thinking design to ensure stability. Similarly, for foundational aspects like security and scalability, some upfront investment is often necessary. The key is to be deliberate and have a strong justification for any feature that is not driven by an immediate need.</p>
+
+        <h4>Related Principles</h4>
+        <ul>
+          <li>YAGNI is a more extreme version of <a href="#" onclick="showTopic('kiss', true); return false;">KISS</a>. While KISS is about simplicity of design, YAGNI is about simplicity of scope.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="soc" data-title="Separation of Concerns" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>Separation of Concerns</h2></div>
+        <h4>Key Concept</h4>
+        <p>Separation of Concerns (SoC) is a design principle for partitioning a computer program into distinct sections, such that each section addresses a separate concern. A concern is a set of information that affects the code of a computer program. By separating concerns, we make the system more modular, easier to understand, and easier to maintain.</p>
+
+        <h4>Core Learning</h4>
+        <p>The main goal of SoC is to reduce complexity. When concerns are mixed, the code becomes tangled and hard to change. For example, if you mix database query logic inside your UI code, a change to the database schema could force you to change the UI code, which makes no logical sense. By separating these concerns, you can modify one part of the system without unintentionally affecting other parts.</p>
+
+        <h4>Examples of SoC in Practice</h4>
+        <ul>
+          <li><strong>Layered Architecture:</strong> The classic example of SoC is the <a href="#" onclick="showTopic('layered', true); return false;">Layered Architecture</a>, which separates the system into Presentation (UI), Application (Service), Domain (Business Logic), and Infrastructure (Persistence, Logging) layers.</li>
+          <li><strong>Model-View-Controller (MVC):</strong> A common pattern in web applications that separates the concerns of data (Model), presentation (View), and user input (Controller).</li>
+          <li><strong>Component-Based Design:</strong> In frontend development, frameworks like React or Vue encourage you to build self-contained components, each with its own markup, styling, and logic. This is another form of SoC.</li>
+        </ul>
+
+        <h4>Code Example (Conceptual)</h4>
+        <pre><button class="copy">Copy</button><code>// A classic example of layering, a form of SoC.
+
+// Concern: Presentation (e.g., ASP.NET Core Controller)
+public class OrderController : ControllerBase {
+  private readonly IOrderService _service;
+  public OrderController(IOrderService service) => _service = service;
+
+  [HttpPost]
+  public async Task<IActionResult> PlaceOrder(OrderDto order) {
+    await _service.PlaceOrderAsync(order);
+    return Ok();
+  }
+}
+
+// Concern: Application/Domain Logic
+public interface IOrderService { Task PlaceOrderAsync(OrderDto order); }
+public class OrderService : IOrderService {
+  private readonly IOrderRepository _repo;
+  public OrderService(IOrderRepository repo) => _repo = repo;
+
+  public async Task PlaceOrderAsync(OrderDto dto) {
+    var order = new Order(dto.Id, dto.Amount); // Domain logic here
+    await _repo.SaveAsync(order);
+  }
+}
+
+// Concern: Infrastructure (Data Access)
+public interface IOrderRepository { Task SaveAsync(Order order); }
+public class OrderRepository : IOrderRepository {
+  private readonly DbContext _db;
+  public OrderRepository(DbContext db) => _db = db;
+
+  public async Task SaveAsync(Order order) {
+    _db.Orders.Add(order);
+    await _db.SaveChangesAsync();
+  }
+}
+</code></pre>
+
+        <h4>Related Principles</h4>
+        <ul>
+          <li>SoC is a foundational principle that enables other principles like <a href="#" onclick="showTopic('solid', true); return false;">SOLID</a> and <a href="#" onclick="showTopic('di', true); return false;">Dependency Inversion</a>.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="di" data-title="Dependency Inversion" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>Dependency Inversion</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Dependency Inversion Principle (DIP) is the 'D' in <a href="#" onclick="showTopic('solid', true); return false;">SOLID</a>. It has two parts:</n          <ol>
+            <li>High-level modules should not depend on low-level modules. Both should depend on abstractions (e.g., interfaces).</li>
+            <li>Abstractions should not depend on details. Details (concrete implementations) should depend on abstractions.</li>
+          </ol>
+        This principle inverts the traditional flow of dependencies, where high-level modules directly depend on low-level ones.</p>
+
+        <h4>Core Learning</h4>
+        <p>The main benefit of DIP is decoupling. When your high-level business logic is not tied to specific implementation details (like a particular database or a specific email service), your code becomes much more flexible and easier to test. You can swap out implementations without changing the high-level code. For example, you can replace a real database with a fake one for testing purposes.</p>
+
+        <h4>Example (C#)</h4>
+        <p>The following example shows a `SignupService` (high-level module) that needs to send a notification. Instead of depending directly on a concrete `EmailNotifier` (low-level module), it depends on an `INotifier` interface (abstraction).</p>
+        <pre><button class="copy">Copy</button><code>// The abstraction that both high-level and low-level modules depend on.
+public interface INotifier {
+  Task SendAsync(string to, string message);
+}
+
+// A concrete implementation (low-level detail).
+public class EmailNotifier : INotifier {
+  public Task SendAsync(string to, string message) {
+    // Code to send an email...
+    Console.WriteLine($"Sending email to {to}: {message}");
+    return Task.CompletedTask;
+  }
+}
+
+// Another concrete implementation.
+public class SmsNotifier : INotifier {
+  public Task SendAsync(string to, string message) {
+    // Code to send an SMS...
+    Console.WriteLine($"Sending SMS to {to}: {message}");
+    return Task.CompletedTask;
+  }
+}
+
+// The high-level module that depends on the abstraction.
+public class SignupService {
+  private readonly INotifier _notifier;
+
+  // The dependency is "injected" via the constructor.
+  public SignupService(INotifier notifier) {
+    _notifier = notifier;
+  }
+
+  public Task SignupAsync(User user) {
+    // The service doesn't know or care if it's sending an email or an SMS.
+    return _notifier.SendAsync(user.Email, "Welcome!");
+  }
+}
+</code></pre>
+        <p class="note"><strong>Dependency Injection (DI)</strong> is a common technique to implement this principle. DI is the mechanism by which the concrete implementations (like `EmailNotifier`) are provided to the high-level modules (like `SignupService`) at runtime, usually by a DI container or framework.</p>
+      </article>
+
+      <!-- ===== SOLID ===== -->
+      <article class="card topic" id="solid" data-title="SOLID" data-category="Principles">
+        <div class="title"><span class="tag">Principles</span><h2>SOLID</h2></div>
+        <h4>Key Concept</h4>
+        <p>SOLID is a mnemonic acronym for five design principles intended to make software designs more understandable, flexible, and maintainable. They are a set of rules and best practices to follow while designing a class or module. When applied together, they help developers create systems that are easy to maintain and extend over time.</p>
+
+        <h4>Core Learning</h4>
+        <p>SOLID principles are the bedrock of good object-oriented design. They guide you to create code that is decoupled, cohesive, and easy to test. Mastering SOLID is a key step in moving from just writing code to designing robust software solutions. While they are presented as five separate principles, they are all interconnected and support each other.</p>
+
+        <h4>The Five SOLID Principles</h4>
+        <ul>
+          <li><strong>S - Single Responsibility Principle (SRP):</strong> A class should have only one reason to change. This means a class should have only one job or responsibility. This is related to <a href="#" onclick="showTopic('soc', true); return false;">Separation of Concerns</a>.</li>
+          <li><strong>O - Open/Closed Principle (OCP):</strong> Software entities (classes, modules, functions) should be open for extension, but closed for modification. This means you should be able to add new functionality without changing existing code.</li>
+          <li><strong>L - Liskov Substitution Principle (LSP):</strong> Subtypes must be substitutable for their base types. This means that objects of a superclass should be replaceable with objects of its subclasses without breaking the application.</li>
+          <li><strong>I - Interface Segregation Principle (ISP):</strong> No client should be forced to depend on methods it does not use. This means that you should favor many small, client-specific interfaces over one large, general-purpose interface.</li>
+          <li><strong>D - <a href="#" onclick="showTopic('di', true); return false;">Dependency Inversion Principle (DIP)</a>:</strong> High-level modules should not depend on low-level modules. Both should depend on abstractions. This is the core principle for creating decoupled systems.</li>
+        </ul>
+        <p class="note">Each of these principles deserves its own detailed study. The guide provides a dedicated section for the Dependency Inversion Principle.</p>
+      </article>
+
+      <!-- ===== Design Patterns (Creational / Structural / Behavioral / Enterprise) ===== -->
+      <article class="card topic" id="design-patterns" data-title="Design Patterns (Overview)" data-category="Patterns">
+        <div class="title"><span class="tag">Patterns</span><h2>Design Patterns — Overview</h2></div>
+        <h4>Key Concept</h4>
+        <p>Design patterns are reusable, well-documented solutions to commonly occurring problems within a given context in software design. They are not finished designs that can be transformed directly into code; rather, they are descriptions or templates for how to solve a problem that can be used in many different situations. They represent the collective wisdom of experienced software developers.</p>
+
+        <h4>Core Learning</h4>
+        <p>The main idea behind design patterns is to provide a common vocabulary and a set of proven solutions for software design. By using design patterns, you can build on the experience of others instead of reinventing the wheel. It's important to understand the problem that a pattern solves, not just the pattern itself. A common mistake is to force a pattern where it doesn't fit. Always start with the problem, and then see if a pattern can help you solve it in an elegant way. A good principle to follow is to favor composition over inheritance.</p>
+
+        <h4>Categories of Design Patterns</h4>
+        <ul>
+          <li><strong>Creational Patterns:</strong> These patterns deal with object creation mechanisms, trying to create objects in a manner suitable to the situation. Examples include <a href="#" onclick="showTopic('factory', true); return false;">Factory</a>, <a href="#" onclick="showTopic('singleton', true); return false;">Singleton</a>, and <a href="#" onclick="showTopic('builder', true); return false;">Builder</a>.</li>
+          <li><strong>Structural Patterns:</strong> These patterns ease the design by identifying a simple way to realize relationships between entities. Examples include <a href="#" onclick="showTopic('adapter', true); return false;">Adapter</a>, <a href="#" onclick="showTopic('composite', true); return false;">Composite</a>, <a href="#" onclick="showTopic('proxy', true); return false;">Proxy</a>, and <a href="#" onclick="showTopic('facade', true); return false;">Facade</a>.</li>
+          <li><strong>Behavioral Patterns:</strong> These patterns are concerned with algorithms and the assignment of responsibilities between objects. Examples include <a href="#" onclick="showTopic('observer', true); return false;">Observer</a>, <a href="#" onclick="showTopic('strategy', true); return false;">Strategy</a>, and <a href="#" onclick="showTopic('command', true); return false;">Command</a>.</li>
+          <li><strong>Enterprise Patterns:</strong> These are patterns for building robust, scalable, and maintainable enterprise applications. Examples include <a href="#" onclick="showTopic('repository', true); return false;">Repository</a>, <a href="#" onclick="showTopic('uow', true); return false;">Unit of Work</a>, <a href="#" onclick="showTopic('cqrs', true); return false;">CQRS</a>, and <a href="#" onclick="showTopic('event-sourcing', true); return false;">Event Sourcing</a>.</li>
+        </ul>
+      </article>
+
+      <!-- Creational -->
+      <article class="card topic" id="factory" data-title="Factory" data-category="Patterns: Creational">
+        <div class="title"><span class="tag">Creational</span><h2>Factory</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Factory Method pattern provides an interface for creating objects in a superclass, but allows subclasses to alter the type of objects that will be created. It's a creational pattern that decouples the client code from the concrete classes you need to instantiate.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Factory pattern when you have a class that cannot anticipate the class of objects it must create. The Factory encapsulates the creation logic, so the client code doesn't need to know the specifics of how to create an object. This makes your code more flexible and easier to extend. If you need to add a new type of object, you just need to add a new class and update the factory, without changing the client code.</p>
+
+        <h4>Example (C#)</h4>
+        <p>In this example, we have a `PaymentFactory` that creates different types of payment processors based on a string identifier. The client code that uses the factory doesn't need to know about `BkashPayment` or `NagadPayment` classes.</p>
+        <pre><button class="copy">Copy</button><code>// The common interface for all payment processors.
+public interface IPayment {
+  void Pay(decimal amount);
+}
+
+// Concrete implementation for bKash.
+public class BkashPayment : IPayment {
+  public void Pay(decimal amount) {
+    Console.WriteLine($"Paying {amount} via bKash.");
+  }
+}
+
+// Concrete implementation for Nagad.
+public class NagadPayment : IPayment {
+  public void Pay(decimal amount) {
+    Console.WriteLine($"Paying {amount} via Nagad.");
+  }
+}
+
+// The Factory class that creates the objects.
+public static class PaymentFactory {
+  public static IPayment Create(string method) {
+    return method.ToLower() switch {
+      "bkash" => new BkashPayment(),
+      "nagad" => new NagadPayment(),
+      _ => throw new NotSupportedException($"Payment method '{method}' is not supported.")
+    };
+  }
+}
+
+// Client code.
+public class CheckoutService {
+  public void ProcessPayment(string paymentMethod, decimal amount) {
+    IPayment paymentProcessor = PaymentFactory.Create(paymentMethod);
+    paymentProcessor.Pay(amount);
+  }
+}
+</code></pre>
+        <p class="note">This pattern is particularly useful when the object creation process is complex or when you want to provide a way for clients to extend the set of created objects (e.g., by registering new types with the factory).</p>
+      </article>
+
+      <article class="card topic" id="singleton" data-title="Singleton" data-category="Patterns: Creational">
+        <div class="title"><span class="tag">Creational</span><h2>Singleton</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Singleton pattern ensures that a class has only one instance, and provides a global point of access to it. This is useful when exactly one object is needed to coordinate actions across the system, for example, a configuration manager or a logger.</p>
+
+        <h4>Core Learning</h4>
+        <p>While the Singleton pattern is simple to understand, it is often overused and can lead to problems. It introduces a global state into the application, which can make testing difficult (as you can't easily mock a singleton). It also violates the <a href="#" onclick="showTopic('solid', true); return false;">Single Responsibility Principle</a>, as the class is responsible for both its own logic and for managing its own lifecycle. In modern applications, it is often better to use a dependency injection container to manage the lifecycle of your objects as singletons, rather than implementing the pattern yourself.</p>
+
+        <h4>Example (C#)</h4>
+        <p>This example shows a thread-safe implementation of the Singleton pattern in C# using `Lazy<T>` to ensure that the instance is created only when it is first accessed.</p>
+        <pre><button class="copy">Copy</button><code>public sealed class AppConfig {
+  // The private static field that will hold the single instance.
+  // Lazy<T> makes the initialization thread-safe and lazy.
+  private static readonly Lazy<AppConfig> _lazyInstance = new(() => new AppConfig());
+
+  // The public static property to access the instance.
+  public static AppConfig Instance => _lazyInstance.Value;
+
+  // The private constructor prevents instantiation from outside the class.
+  private AppConfig() {
+    // Load configuration from a file or other source.
+    Console.WriteLine("AppConfig instance created.");
+  }
+
+  // Example configuration property.
+  public string GetApiUrl() => "https://api.example.com";
+}
+
+// Client code.
+public class SomeService {
+  public void DoWork() {
+    string apiUrl = AppConfig.Instance.GetApiUrl();
+    // ...
+  }
+}
+</code></pre>
+
+        <h4>Watch-outs</h4>
+        <ul>
+          <li class="warn"><strong>Testability Issues:</strong> Singletons are hard to mock or stub in unit tests. This can make your tests slow and dependent on the real implementation.</li>
+          <li class="warn"><strong>Hidden Dependencies:</strong> When a class uses a singleton, its dependency on that singleton is hidden in the code, not exposed in its public API. This makes the code harder to understand and reuse.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="builder" data-title="Builder" data-category="Patterns: Creational">
+        <div class="title"><span class="tag">Creational</span><h2>Builder</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Builder pattern is a creational design pattern that lets you construct complex objects step by step. The pattern allows you to produce different types and representations of an object using the same construction code. It is particularly useful when an object has many configuration options or when the creation process is complex.</p>
+
+        <h4>Core Learning</h4>
+        <p>The main advantage of the Builder pattern is that it separates the construction of a complex object from its representation. This means you can use the same construction process to create different representations of the object. It also improves readability by making the code that creates the object look like a fluent, readable API. This is a great alternative to having constructors with a large number of optional parameters (a "telescoping constructor" anti-pattern).</p>
+
+        <h4>Example (C#)</h4>
+        <p>This example shows how to build a `Report` object with various optional parts using a fluent `ReportBuilder`.</p>
+        <pre><button class="copy">Copy</button><code>// The complex object we want to build.
+public class Report {
+  public string Title { get; set; }
+  public bool HasHeader { get; set; }
+  public bool HasFooter { get; set; }
+  public bool HasChart { get; set; }
+  public bool HasTable { get; set; }
+
+  public void Display() {
+    Console.WriteLine($"--- Report: {Title} ---");
+    if (HasHeader) Console.WriteLine("Header");
+    if (HasChart) Console.WriteLine("Chart");
+    if (HasTable) Console.WriteLine("Table");
+    if (HasFooter) Console.WriteLine("Footer");
+  }
+}
+
+// The Builder class with a fluent interface.
+public class ReportBuilder {
+  private readonly Report _report = new();
+
+  public ReportBuilder Title(string title) {
+    _report.Title = title;
+    return this;
+  }
+
+  public ReportBuilder AddHeader() {
+    _report.HasHeader = true;
+    return this;
+  }
+
+  public ReportBuilder AddFooter() {
+    _report.HasFooter = true;
+    return this;
+  }
+
+  public ReportBuilder AddChart() {
+    _report.HasChart = true;
+    return this;
+  }
+
+  public ReportBuilder AddTable() {
+    _report.HasTable = true;
+    return this;
+  }
+
+  public Report Build() {
+    return _report;
+  }
+}
+
+// Client code.
+public class ReportGenerator {
+  public void GenerateSalesReport() {
+    var builder = new ReportBuilder();
+    var salesReport = builder
+      .Title("Monthly Sales Report")
+      .AddHeader()
+      .AddChart()
+      .AddTable()
+      .AddFooter()
+      .Build();
+
+    salesReport.Display();
+  }
+}
+</code></pre>
+      </article>
+
+      <!-- Structural -->
+      <article class="card topic" id="adapter" data-title="Adapter" data-category="Patterns: Structural">
+        <div class="title"><span class="tag">Structural</span><h2>Adapter</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Adapter pattern is a structural design pattern that allows objects with incompatible interfaces to collaborate. It acts as a wrapper between two objects, catching calls for one object and transforming them into a format and interface recognizable by the other.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Adapter pattern when you want to use an existing class, but its interface is not compatible with the rest of your code. This often happens when you are integrating a third-party library or a legacy component. The Adapter lets you use the functionality of the existing class without changing its source code, and without your client code knowing about the incompatibility.</p>
+
+        <h4>Example (C#)</h4>
+        <p>In this example, our application uses an `INotification` interface to send messages. We want to use a third-party `SmsGateway` to send SMS messages, but it has a different interface (`Push` method). The `SmsAdapter` class wraps the `SmsGateway` and implements the `INotification` interface, translating the `Send` call to a `Push` call.</p>
+        <pre><button class="copy">Copy</button><code>// The interface that our application uses.
+public interface INotification {
+  void Send(string to, string message);
+}
+
+// The third-party class with an incompatible interface.
+public class SmsGateway {
+  public void Push(string phoneNumber, string text) {
+    Console.WriteLine($"Sending SMS to {phoneNumber}: {text}");
+  }
+}
+
+// The Adapter class that makes the SmsGateway compatible with our application.
+public class SmsAdapter : INotification {
+  private readonly SmsGateway _smsGateway;
+
+  public SmsAdapter(SmsGateway smsGateway) {
+    _smsGateway = smsGateway;
+  }
+
+  public void Send(string to, string message) {
+    // The adapter translates the call to the appropriate method.
+    _smsGateway.Push(to, message);
+  }
+}
+
+// Client code.
+public class NotificationService {
+  public void SendNotification(INotification notification, string recipient, string message) {
+    notification.Send(recipient, message);
+  }
+}
+
+// Somewhere in the application setup:
+var smsGateway = new SmsGateway();
+var smsAdapter = new SmsAdapter(smsGateway);
+var notificationService = new NotificationService();
+notificationService.SendNotification(smsAdapter, "+880123456789", "Your order has shipped!");
+</code></pre>
+      </article>
+
+      <article class="card topic" id="composite" data-title="Composite" data-category="Patterns: Structural">
+        <div class="title"><span class="tag">Structural</span><h2>Composite</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Composite pattern is a structural design pattern that lets you compose objects into tree structures and then work with these structures as if they were individual objects. It allows clients to treat individual objects (leaves) and compositions of objects (composites) uniformly.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Composite pattern when you have a part-whole hierarchy and you want to be able to treat all objects in the hierarchy in the same way. A classic example is a graphical user interface, where a window can contain panels, which can contain buttons, text fields, and other panels. The Composite pattern allows you to apply an operation (like `draw()`) to the entire tree, and it will recursively be applied to all the children.</p>
+
+        <h4>Example (C#)</h4>
+        <p>This example shows a simple file system structure. Both `File` (a leaf) and `Directory` (a composite) implement the `IFileSystemItem` interface, so they can be treated uniformly. A directory can contain files or other directories.</p>
+        <pre><button class="copy">Copy</button><code>// The common interface for both simple (leaf) and complex (composite) objects.
+public interface IFileSystemItem {
+  string Name { get; }
+  int GetSize();
+}
+
+// The Leaf class represents a simple object.
+public class File : IFileSystemItem {
+  public string Name { get; }
+  private readonly int _size;
+
+  public File(string name, int size) {
+    Name = name;
+    _size = size;
+  }
+
+  public int GetSize() => _size;
+}
+
+// The Composite class represents a complex object that can have children.
+public class Directory : IFileSystemItem {
+  public string Name { get; }
+  private readonly List<IFileSystemItem> _children = new();
+
+  public Directory(string name) {
+    Name = name;
+  }
+
+  public void Add(IFileSystemItem item) {
+    _children.Add(item);
+  }
+
+  public int GetSize() {
+    // The size of the directory is the sum of the sizes of its children.
+    return _children.Sum(child => child.GetSize());
+  }
+}
+
+// Client code.
+public class FileSystemExplorer {
+  public void Explore() {
+    var root = new Directory("root");
+    var music = new Directory("music");
+    music.Add(new File("song1.mp3", 4000));
+    music.Add(new File("song2.mp3", 5000));
+    root.Add(music);
+    root.Add(new File("readme.txt", 100));
+
+    // We can get the size of the root directory without knowing its contents.
+    Console.WriteLine($"Total size: {root.GetSize()}"); // Outputs 9100
+  }
+}
+</code></pre>
+      </article>
+
+      <article class="card topic" id="proxy" data-title="Proxy" data-category="Patterns: Structural">
+        <div class="title"><span class="tag">Structural</span><h2>Proxy</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Proxy pattern provides a surrogate or placeholder for another object to control access to it. A proxy object has the same interface as the real object it is proxying, which allows it to be substituted for the real object. The proxy can then add extra logic before or after delegating the call to the real object.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Proxy pattern when you want to add a layer of control over access to an object. There are several types of proxies, each for a different purpose:</p>
+        <ul>
+          <li><strong>Remote Proxy:</strong> Represents an object in a different address space (e.g., on a remote server).</li>
+          <li><strong>Virtual Proxy:</strong> Creates expensive objects on demand (lazy initialization).</li>
+          <li><strong>Protection Proxy:</strong> Controls access to the methods of an object based on the caller's permissions.</li>
+          <li><strong>Caching Proxy:</strong> Caches the results of expensive operations and returns the cached result when the operation is called again with the same arguments.</li>
+        </ul>
+
+        <h4>Example (C# - Caching Proxy)</h4>
+        <p>This example shows a caching proxy for a video downloading service. The `CachedVideoDownloader` acts as a proxy for the `RealVideoDownloader`. When a video is requested, the proxy first checks if it's already in the cache. If it is, it returns the cached video; otherwise, it calls the real downloader, caches the result, and then returns it.</p>
+        <pre><button class="copy">Copy</button><code>// The common interface for the real object and the proxy.
+public interface IVideoDownloader {
+  Task<byte[]> DownloadVideoAsync(string url);
+}
+
+// The real object that does the expensive work.
+public class RealVideoDownloader : IVideoDownloader {
+  public async Task<byte[]> DownloadVideoAsync(string url) {
+    Console.WriteLine($"Downloading video from {url}...");
+    // Simulate a network call.
+    await Task.Delay(2000);
+    return new byte[1024]; // Dummy video data
+  }
+}
+
+// The Proxy class that adds caching.
+public class CachedVideoDownloader : IVideoDownloader {
+  private readonly RealVideoDownloader _realDownloader;
+  private readonly Dictionary<string, byte[]> _cache = new();
+
+  public CachedVideoDownloader(RealVideoDownloader realDownloader) {
+    _realDownloader = realDownloader;
+  }
+
+  public async Task<byte[]> DownloadVideoAsync(string url) {
+    if (_cache.ContainsKey(url)) {
+      Console.WriteLine($"Returning cached video for {url}.");
+      return _cache[url];
+    }
+
+    var videoData = await _realDownloader.DownloadVideoAsync(url);
+    _cache[url] = videoData;
+    return videoData;
+  }
+}
+
+// Client code.
+public class VideoPlayer {
+  public async Task PlayVideo(string url) {
+    var downloader = new CachedVideoDownloader(new RealVideoDownloader());
+    var video = await downloader.DownloadVideoAsync(url); // First time, downloads
+    var video2 = await downloader.DownloadVideoAsync(url); // Second time, from cache
+  }
+}
+</code></pre>
+      </article>
+
+      <article class="card topic" id="facade" data-title="Facade" data-category="Patterns: Structural">
+        <div class="title"><span class="tag">Structural</span><h2>Facade</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Facade pattern provides a simplified, high-level interface to a larger body of code, such as a complex subsystem or a library. It hides the complexity of the subsystem and provides a more convenient API for the client code.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Facade pattern when you have a complex subsystem that is difficult to use because it has many classes and a complicated API. The Facade can provide a simple entry point to the subsystem's functionality. This promotes loose coupling between the client and the subsystem, as the client only needs to know about the Facade, not the dozens of classes behind it. This makes the client code simpler and easier to maintain.</p>
+
+        <h4>Example (C#)</h4>
+        <p>In this example, we have a complex home theater system with separate components for the amplifier, tuner, DVD player, and projector. The `HomeTheaterFacade` provides a simple interface with methods like `WatchMovie()` and `EndMovie()`, which orchestrate the necessary calls to the underlying components.</p>
+        <pre><button class="copy">Copy</button><code>// Complex subsystem components
+public class Amplifier { public void On() => Console.WriteLine("Amplifier on"); }
+public class Tuner { public void On() => Console.WriteLine("Tuner on"); }
+public class DvdPlayer { public void On() => Console.WriteLine("DVD Player on"); public void Play(string movie) => Console.WriteLine($"Playing \"{movie}\""); }
+public class Projector { public void On() => Console.WriteLine("Projector on"); }
+
+// The Facade class that simplifies the subsystem.
+public class HomeTheaterFacade {
+  private readonly Amplifier _amp;
+  private readonly Tuner _tuner;
+  private readonly DvdPlayer _dvd;
+  private readonly Projector _projector;
+
+  public HomeTheaterFacade(Amplifier amp, Tuner tuner, DvdPlayer dvd, Projector projector) {
+    _amp = amp; _tuner = tuner; _dvd = dvd; _projector = projector;
+  }
+
+  public void WatchMovie(string movie) {
+    Console.WriteLine("Get ready to watch a movie...");
+    _amp.On();
+    _tuner.On();
+    _dvd.On();
+    _projector.On();
+    _dvd.Play(movie);
+  }
+
+  public void EndMovie() {
+    Console.WriteLine("Shutting movie theater down...");
+    // ... turn off all components
+  }
+}
+
+// Client code.
+public class HomeTheaterEnthusiast {
+  public void EnjoyMovie() {
+    var facade = new HomeTheaterFacade(new Amplifier(), new Tuner(), new DvdPlayer(), new Projector());
+    facade.WatchMovie("The Matrix");
+  }
+}
+</code></pre>
+        <p class="note">The Facade doesn't encapsulate the subsystem entirely. The client can still access the underlying classes if they need more advanced functionality. The Facade just provides a simpler alternative for the most common use cases.</p>
+      </article>
+
+      <!-- Behavioral -->
+      <article class="card topic" id="observer" data-title="Observer" data-category="Patterns: Behavioral">
+        <div class="title"><span class="tag">Behavioral</span><h2>Observer</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Observer pattern is a behavioral design pattern that defines a one-to-many dependency between objects. When one object (the subject or publisher) changes its state, all its dependents (the observers or subscribers) are notified and updated automatically. This is also known as the Publish/Subscribe (Pub/Sub) pattern.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Observer pattern when you have a situation where a change in one object needs to be reflected in other, unrelated objects without coupling them tightly. The subject and observers are loosely coupled; the subject only knows that it has a list of observers, each conforming to a specific interface. It doesn't know the concrete classes of the observers. This allows you to add new observers without changing the subject's code.</p>
+
+        <h4>Example (C#)</h4>
+        <p>In this example, a `WeatherStation` (the subject) notifies multiple `IDisplay` observers whenever the temperature changes. The `CurrentConditionsDisplay` and `ForecastDisplay` are concrete observers that react to the notification.</p>
+        <pre><button class="copy">Copy</button><code>// The Observer interface.
+public interface IDisplay {
+  void Update(float temperature);
+}
+
+// The Subject (or Publisher).
+public class WeatherStation {
+  private readonly List<IDisplay> _displays = new();
+  private float _temperature;
+
+  public void Add(IDisplay display) => _displays.Add(display);
+  public void Remove(IDisplay display) => _displays.Remove(display);
+
+  public void SetTemperature(float temp) {
+    _temperature = temp;
+    Notify();
+  }
+
+  private void Notify() {
+    foreach (var display in _displays) {
+      display.Update(_temperature);
+    }
+  }
+}
+
+// Concrete Observers.
+public class CurrentConditionsDisplay : IDisplay {
+  public void Update(float temperature) => Console.WriteLine($"Current conditions: {temperature}C");
+}
+
+public class ForecastDisplay : IDisplay {
+  public void Update(float temperature) => Console.WriteLine($"Forecast: Expect warmer weather.");
+}
+
+// Client code.
+var station = new WeatherStation();
+station.Add(new CurrentConditionsDisplay());
+station.Add(new ForecastDisplay());
+
+station.SetTemperature(25.5f);
+// Both displays will be notified and print their messages.
+</code></pre>
+        <p class="note">In modern C#, this pattern is often implemented using events (`event` and `delegate`) which provide a built-in way to handle publish/subscribe scenarios.</p>
+      </article>
+
+      <article class="card topic" id="strategy" data-title="Strategy" data-category="Patterns: Behavioral">
+        <div class="title"><span class="tag">Behavioral</span><h2>Strategy</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Strategy pattern is a behavioral design pattern that enables selecting an algorithm at runtime. Instead of implementing a single algorithm directly, code receives runtime instructions as to which in a family of algorithms to use. It defines a family of algorithms, encapsulates each one, and makes them interchangeable.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Strategy pattern when you have a task that can be performed in multiple ways, and you want to be able to switch between these ways easily. This pattern lets you vary the algorithm independently from the clients that use it. It helps to avoid complex conditional statements (e.g., `if/else` or `switch` blocks) for selecting an algorithm, and it follows the <a href="#" onclick="showTopic('solid', true); return false;">Open/Closed Principle</a>, as you can introduce new strategies without changing the context class.</p>
+
+        <h4>Example (C#)</h4>
+        <p>In this example, a `ShippingCalculator` can calculate the cost of shipping using different strategies. We have strategies for FedEx, UPS, and USPS. The `ShippingCalculator` (the context) is configured with a specific strategy and uses it to calculate the cost.</p>
+        <pre><button class="copy">Copy</button><code>// The Strategy interface.
+public interface IShippingStrategy {
+  decimal Calculate(Order order);
+}
+
+// Concrete Strategies.
+public class FedExShippingStrategy : IShippingStrategy {
+  public decimal Calculate(Order order) => 5.00m;
+}
+public class UpsShippingStrategy : IShippingStrategy {
+  public decimal Calculate(Order order) => 4.50m;
+}
+public class UspsShippingStrategy : IShippingStrategy {
+  public decimal Calculate(Order order) => 3.75m;
+}
+
+// The Context class that uses a strategy.
+public class ShippingCalculator {
+  private IShippingStrategy _shippingStrategy;
+
+  public void SetStrategy(IShippingStrategy strategy) {
+    _shippingStrategy = strategy;
+  }
+
+  public decimal CalculateShippingCost(Order order) {
+    return _shippingStrategy.Calculate(order);
+  }
+}
+
+// Client code.
+var order = new Order();
+var calculator = new ShippingCalculator();
+
+calculator.SetStrategy(new FedExShippingStrategy());
+var cost1 = calculator.CalculateShippingCost(order); // 5.00m
+
+calculator.SetStrategy(new UpsShippingStrategy());
+var cost2 = calculator.CalculateShippingCost(order); // 4.50m
+</code></pre>
+      </article>
+
+      <article class="card topic" id="command" data-title="Command" data-category="Patterns: Behavioral">
+        <div class="title"><span class="tag">Behavioral</span><h2>Command</h2></div>
+        <h4>Key Concept</h4>
+        <p>The Command pattern is a behavioral design pattern that turns a request into a stand-alone object that contains all information about the request. This transformation lets you parameterize methods with different requests, delay or queue a request's execution, and support undoable operations.</p>
+
+        <h4>Core Learning</h4>
+        <p>Use the Command pattern when you want to decouple the object that invokes an operation from the object that knows how to perform it. This is useful for building systems with features like undo/redo, queuing requests, or logging operations. The invoker doesn't need to know anything about the concrete command; it just needs to know how to execute a command.</p>
+
+        <h4>Example (C#)</h4>
+        <p>This example shows a simple remote control for a light. The `LightOnCommand` and `LightOffCommand` encapsulate the requests to turn a light on and off. The `RemoteControl` (the invoker) can be configured with any command and execute it.</p>
+        <pre><button class="copy">Copy</button><code>// The Command interface.
+public interface ICommand {
+  void Execute();
+}
+
+// The Receiver class that performs the actual work.
+public class Light {
+  public void TurnOn() => Console.WriteLine("The light is on");
+  public void TurnOff() => Console.WriteLine("The light is off");
+}
+
+// Concrete Command to turn the light on.
+public class LightOnCommand : ICommand {
+  private readonly Light _light;
+  public LightOnCommand(Light light) => _light = light;
+  public void Execute() => _light.TurnOn();
+}
+
+// Concrete Command to turn the light off.
+public class LightOffCommand : ICommand {
+  private readonly Light _light;
+  public LightOffCommand(Light light) => _light = light;
+  public void Execute() => _light.TurnOff();
+}
+
+// The Invoker class.
+public class RemoteControl {
+  private ICommand _command;
+
+  public void SetCommand(ICommand command) {
+    _command = command;
+  }
+
+  public void PressButton() {
+    _command.Execute();
+  }
+}
+
+// Client code.
+var light = new Light();
+var remote = new RemoteControl();
+
+remote.SetCommand(new LightOnCommand(light));
+remote.PressButton(); // The light is on
+
+remote.SetCommand(new LightOffCommand(light));
+remote.PressButton(); // The light is off
+</code></pre>
+      </article>
+
+      <!-- Enterprise patterns -->
+      <article class="card topic" id="repository" data-title="Repository" data-category="Patterns: Enterprise">
+        <div class="title"><span class="tag">Enterprise</span><h2>Repository</h2></div>
+        <p>Collection-like abstraction over persistence; hides ORM details from domain.</p>
+        <pre><button class="copy">Copy</button><code>public interface IOrderRepo { Task<Order?> Get(Guid id); Task Save(Order o); }</code></pre>
+      </article>
+
+      <article class="card topic" id="uow" data-title="Unit of Work" data-category="Patterns: Enterprise">
+        <div class="title"><span class="tag">Enterprise</span><h2>Unit of Work</h2></div>
+        <p>Track changes as a business transaction; commit once.</p>
+      </article>
+
+      <article class="card topic" id="cqrs" data-title="CQRS" data-category="Patterns: Enterprise">
+        <div class="title"><span class="tag">Enterprise</span><h2>CQRS</h2></div>
+        <p>Split <em>commands</em> (writes) and <em>queries</em> (reads) to scale independently.</p>
+        <ul><li>Pairs well with event sourcing and read models.</li></ul>
+      </article>
+
+      <article class="card topic" id="event-sourcing" data-title="Event Sourcing" data-category="Patterns: Enterprise">
+        <div class="title"><span class="tag">Enterprise</span><h2>Event Sourcing</h2></div>
+        <p>Persist domain <em>events</em> as the source of truth; rebuild state by replay.</p>
+        <ul>
+          <li class="good">Auditability & time travel.</li>
+          <li class="bad">Event versioning and projections add complexity.</li>
+        </ul>
+      </article>
+
+      <!-- ===== Architecture Styles & DDD ===== -->
+      <article class="card topic" id="mono-vs-distributed" data-title="Monoliths vs. Distributed" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Monoliths vs. Distributed Systems</h2></div>
+        <div class="grid">
+          <div>
+            <h4>Monolith</h4>
+            <ul>
+              <li>Simple deployment, easy debugging.</li>
+              <li>Vertical scaling first; modular monolith recommended initially.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Distributed (microservices, SOA, EDA)</h4>
+            <ul>
+              <li>Independent scaling & releases; team autonomy.</li>
+              <li>Added <strong>operational complexity</strong>: networking, observability, data consistency.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="note">Rule of thumb: start modular monolith; extract services when driven by team boundaries and scaling hotspots.</p>
+      </article>
+
+      <article class="card topic" id="layered" data-title="Layered (N-tier)" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Layered (N‑tier) Architecture</h2></div>
+        <ul>
+          <li>Classic UI → Application → Domain → Infrastructure split.</li>
+          <li>Great default; enforce direction (top depends on bottom, not vice versa).</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="microservices" data-title="Microservices" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Microservices</h2></div>
+        <ul>
+          <li>Autonomous services per <strong>bounded context</strong>; data per service.</li>
+          <li>Needs platform maturity: CI/CD, service mesh, centralized logs, tracing.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="eda" data-title="Event-Driven Architecture (EDA)" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Event‑Driven Architecture (EDA)</h2></div>
+        <ul>
+          <li>Loosely coupled via async events (Kafka, RabbitMQ).</li>
+          <li>Improves throughput; eventual consistency trade‑offs.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="soa" data-title="Service-Oriented Architecture (SOA)" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Service‑Oriented Architecture (SOA)</h2></div>
+        <p>Services communicate via enterprise bus or HTTP; often larger, reusable enterprise services.</p>
+      </article>
+
+      <article class="card topic" id="serverless" data-title="Serverless & Cloud-Native" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Serverless & Cloud‑Native</h2></div>
+        <ul>
+          <li>Managed compute (AWS Lambda/Azure Functions), autoscaling, pay‑per‑use.</li>
+          <li>Design for statelessness, cold starts, idempotency, retries.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="hex-onion-clean" data-title="Hexagonal / Onion / Clean" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Hexagonal / Onion / Clean</h2></div>
+        <p>Ports & Adapters; dependency rule points <em>inward</em> to the domain core. Infrastructure is a plugin.</p>
+      </article>
+
+      <article class="card topic" id="ddd" data-title="Domain-Driven Design (DDD)" data-category="Architecture Styles">
+        <div class="title"><span class="tag">Style</span><h2>Domain‑Driven Design (DDD)</h2></div>
+        <ul>
+          <li>Ubiquitous language with domain experts.</li>
+          <li>Entities, Value Objects, Aggregates (enforce invariants).</li>
+          <li>Bounded contexts + context maps (upstream/downstream).</li>
+        </ul>
+      </article>
+
+      <!-- ===== Cloud & Infra ===== -->
+      <article class="card topic" id="cloud-platforms" data-title="Cloud Platforms (AWS/Azure/GCP)" data-category="Cloud & Infra">
+        <div class="title"><span class="tag">Cloud</span><h2>Cloud Platforms: AWS, Azure, GCP — fundamentals</h2></div>
+        <ul>
+          <li>Core: compute, storage, networking, IAM, databases, messaging.</li>
+          <li>Cost awareness: right‑size, autoscale, reserved instances.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="cloud-native" data-title="Cloud-Native Principles" data-category="Cloud & Infra">
+        <div class="title"><span class="tag">Cloud</span><h2>Cloud‑Native Principles</h2></div>
+        <ul>
+          <li>Immutable infrastructure; declarative config; automate everything.</li>
+          <li>12‑factor apps: stateless processes, externalize state & config.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="iac" data-title="Infrastructure as Code (Terraform/Ansible/Pulumi)" data-category="Cloud & Infra">
+        <div class="title"><span class="tag">Cloud</span><h2>Infrastructure as Code (IaC)</h2></div>
+        <pre><button class="copy">Copy</button><code># Terraform snippet (aws s3 bucket)
+resource "aws_s3_bucket" "logs" { bucket = "my-logs" }
+</code></pre>
+        <p class="note">Version your infra like code; enable repeatable environments.</p>
+      </article>
+
+      <article class="card topic" id="containers" data-title="Containers & Orchestration (Docker/Kubernetes)" data-category="Cloud & Infra">
+        <div class="title"><span class="tag">Cloud</span><h2>Containerization & Orchestration</h2></div>
+        <ul>
+          <li>Docker images define runtime; Kubernetes orchestrates scaling, rollout, healing.</li>
+          <li>Use health probes, resource limits, and config/secret objects.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="cicd" data-title="CI/CD (Actions/GitLab/Jenkins/ArgoCD)" data-category="Cloud & Infra">
+        <div class="title"><span class="tag">Cloud</span><h2>CI/CD Pipelines</h2></div>
+        <pre><button class="copy">Copy</button><code># GitHub Actions: build-and-test
+name: ci
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v4
+      with: { dotnet-version: '8.0.x' }
+    - run: dotnet test --configuration Release</code></pre>
+      </article>
+
+      <!-- ===== Scalability / Performance / Reliability ===== -->
+      <article class="card topic" id="caching" data-title="Caching strategies (Redis etc.)" data-category="Scalability & Reliability">
+        <div class="title"><span class="tag">Scalability</span><h2>Caching Strategies</h2></div>
+        <ul>
+          <li>In‑process (MemoryCache), distributed (Redis), HTTP caching (ETag/Cache‑Control).</li>
+          <li>Patterns: cache‑aside, read‑through, write‑behind, TTL & invalidation.</li>
+        </ul>
+        <pre><button class="copy">Copy</button><code>// .NET + Redis (StackExchange.Redis)
+var cached = await db.StringGetAsync(key);
+if (cached.IsNull) {
+  var value = await LoadFromDb();
+  await db.StringSetAsync(key, value, TimeSpan.FromMinutes(10));
+}</code></pre>
+      </article>
+
+      <article class="card topic" id="load-balancing" data-title="Load balancing & traffic management" data-category="Scalability & Reliability">
+        <div class="title"><span class="tag">Scalability</span><h2>Load Balancing & Traffic Management</h2></div>
+        <ul>
+          <li>L4/L7 balancing (Nginx, Envoy), blue/green & canary releases.</li>
+          <li>Rate limiting, circuit breakers (Polly), backoff & jitter.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="db-scaling" data-title="Database scaling: Sharding/Replication/Partitioning" data-category="Scalability & Reliability">
+        <div class="title"><span class="tag">Scalability</span><h2>Database Scaling</h2></div>
+        <ul>
+          <li><strong>Vertical</strong> first (indexes, query plans); then <strong>replication/partitioning</strong>.</li>
+          <li>Sharding keys must reflect access patterns; avoid cross‑shard joins.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="messaging" data-title="Message queues & streaming (Kafka/RabbitMQ/SQS)" data-category="Scalability & Reliability">
+        <div class="title"><span class="tag">Scalability</span><h2>Message Queues & Streaming</h2></div>
+        <ul>
+          <li>Queues for work distribution/retries; streams for ordered logs & analytics.</li>
+          <li>Guarantees: at‑least‑once, exactly‑once (effective), ordering, idempotency.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="observability" data-title="Monitoring & observability (Prometheus/Grafana/ELK)" data-category="Scalability & Reliability">
+        <div class="title"><span class="tag">Reliability</span><h2>Monitoring & Observability</h2></div>
+        <ul>
+          <li>Logs, metrics, traces: correlate with a request ID.</li>
+          <li>SLOs & SLIs; alert on symptoms (error rate, latency), not just causes.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="ha-dr" data-title="High availability & disaster recovery" data-category="Scalability & Reliability">
+        <div class="title"><span class="tag">Reliability</span><h2>High Availability & Disaster Recovery</h2></div>
+        <ul>
+          <li>Multi‑AZ/region replicas; automated failover; RPO/RTO objectives.</li>
+          <li>Run game days & restore drills; document recovery runbooks.</li>
+        </ul>
+      </article>
+
+      <!-- ===== Security & Compliance ===== -->
+      <article class="card topic" id="auth" data-title="Authentication & Authorization (OAuth2/JWT/OIDC)" data-category="Security">
+        <div class="title"><span class="tag">Security</span><h2>Authentication & Authorization</h2></div>
+        <ul>
+          <li>Use OAuth2/OIDC with an IdP (Auth0/Azure AD/Keycloak).</li>
+          <li>Prefer short‑lived tokens, refresh tokens, and scopes/roles.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="secure-design" data-title="Secure design (least privilege, zero trust)" data-category="Security">
+        <div class="title"><span class="tag">Security</span><h2>Secure Design Principles</h2></div>
+        <ul>
+          <li>Least privilege; defense in depth; fail secure.</li>
+          <li>Zero trust: verify explicitly; assume breach.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="encryption" data-title="Data encryption (in transit & at rest)" data-category="Security">
+        <div class="title"><span class="tag">Security</span><h2>Data Encryption</h2></div>
+        <ul>
+          <li>TLS 1.2+ for data in transit; rotate certs/keys; pin when needed.</li>
+          <li>At rest: KMS/CMK; separate duties; audit access.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="owasp" data-title="OWASP Top 10" data-category="Security">
+        <div class="title"><span class="tag">Security</span><h2>OWASP Top 10 (Web Risks)</h2></div>
+        <ul>
+          <li>Broken access control, injections, cryptographic failures, etc.</li>
+          <li>Threat modeling + SAST/DAST + dependency scanning in CI.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="compliance" data-title="Regulatory compliance (GDPR/HIPAA/PCI-DSS)" data-category="Security">
+        <div class="title"><span class="tag">Security</span><h2>Regulatory Compliance</h2></div>
+        <p>Map data flows, define lawful bases, minimize PII, maintain records of processing, and document DPIAs where required.</p>
+      </article>
+
+      <!-- ===== Data & Storage ===== -->
+      <article class="card topic" id="relational" data-title="Relational DBs (SQL)" data-category="Data & Storage">
+        <div class="title"><span class="tag">Data</span><h2>Relational Databases (SQL)</h2></div>
+        <ul>
+          <li>Normalize to reduce anomalies; denormalize for reads when profiling proves it.</li>
+          <li>Indexes, transactions (ACID), and isolation levels matter.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="nosql" data-title="NoSQL (Mongo/Dynamo/Cassandra) — when to use" data-category="Data & Storage">
+        <div class="title"><span class="tag">Data</span><h2>NoSQL Databases — when to use</h2></div>
+        <ul>
+          <li>Document (MongoDB): flexible schemas, content/catalog.</li>
+          <li>Key‑value (DynamoDB/Redis): ultra‑fast lookups.</li>
+          <li>Wide‑column (Cassandra): high write throughput, time‑series.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="cap" data-title="CAP Theorem & trade-offs" data-category="Data & Storage">
+        <div class="title"><span class="tag">Data</span><h2>CAP Theorem & Trade‑offs</h2></div>
+        <p>In a partition, choose between <strong>consistency</strong> and <strong>availability</strong>. Design for what your users value most.</p>
+      </article>
+
+      <article class="card topic" id="es-cqrs" data-title="Event sourcing & CQRS (data view)" data-category="Data & Storage">
+        <div class="title"><span class="tag">Data</span><h2>Event Sourcing & CQRS (Data View)</h2></div>
+        <p>Persist events; build read models tailored for queries. Great for audit trails and complex workflows.</p>
+      </article>
+
+      <article class="card topic" id="dwh" data-title="Data lakes, warehouses, pipelines (ETL/ELT)" data-category="Data & Storage">
+        <div class="title"><span class="tag">Data</span><h2>Data Lakes, Warehouses, Pipelines</h2></div>
+        <ul>
+          <li>ELT on cloud warehouses (BigQuery/Snowflake) vs ETL to on‑prem.</li>
+          <li>Ingest (Kafka Connect), transform (dbt/Spark), catalog & govern (Glue).</li>
+        </ul>
+      </article>
+
+      <!-- ===== Systems Thinking & Trade-offs ===== -->
+      <article class="card topic" id="nfrs" data-title="Non-functional requirements (NFRs)" data-category="Systems & Trade‑offs">
+        <div class="title"><span class="tag">Systems</span><h2>Non‑Functional Requirements (NFRs)</h2></div>
+        <ul>
+          <li>Scalability, Reliability, Maintainability, Portability, Usability, Performance.</li>
+          <li>Turn into <strong>measurable</strong> SLIs/SLOs (e.g., p95 latency &lt; 250ms).</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="tradeoffs" data-title="Trade-off analysis" data-category="Systems & Trade‑offs">
+        <div class="title"><span class="tag">Systems</span><h2>Trade‑off Analysis</h2></div>
+        <ul>
+          <li>Latency vs throughput, consistency vs availability, coupling vs cohesion.</li>
+          <li>Use scorecards & RFCs; record decisions in ADRs.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="adr" data-title="Architecture Decision Records (ADR)" data-category="Systems & Trade‑offs">
+        <div class="title"><span class="tag">Systems</span><h2>Architecture Decision Records (ADR)</h2></div>
+        <pre><button class="copy">Copy</button><code># ADR-0007: Adopt Redis Cache
+Context: Home page latency too high at peak.
+Decision: Use Redis with cache-aside (10 min TTL).
+Consequences: +Faster reads; -Need invalidation on updates.
+Status: Accepted (2025-08-19)</code></pre>
+      </article>
+
+      <!-- ===== Soft Skills & Leadership ===== -->
+      <article class="card topic" id="soft-skills" data-title="Soft Skills & Leadership (overview)" data-category="Soft Skills">
+        <div class="title"><span class="tag">People</span><h2>Soft Skills & Leadership</h2></div>
+        <ul>
+          <li>Translate business goals into technical roadmaps.</li>
+          <li>Mentor engineers; set engineering standards; foster feedback culture.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="communication" data-title="Communication with stakeholders" data-category="Soft Skills">
+        <div class="title"><span class="tag">People</span><h2>Communication with Stakeholders</h2></div>
+        <ul>
+          <li>Use the C4 model diagrams; avoid jargon; highlight risks & costs.</li>
+          <li>Provide options A/B/C with trade‑offs and recommendation.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="mentoring" data-title="Mentoring & guiding teams" data-category="Soft Skills">
+        <div class="title"><span class="tag">People</span><h2>Mentoring & Guiding Teams</h2></div>
+        <ul>
+          <li>Pair design reviews with concrete code examples.</li>
+          <li>Create learning paths; celebrate small wins.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="negotiation" data-title="Negotiation & explaining trade-offs" data-category="Soft Skills">
+        <div class="title"><span class="tag">People</span><h2>Negotiation & Trade‑offs</h2></div>
+        <ul>
+          <li>Time/Scope/Quality triangle; agree on what moves.</li>
+          <li>Seek win‑win; quantify impact with data.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="docs-diagrams" data-title="Technical docs & diagrams" data-category="Soft Skills">
+        <div class="title"><span class="tag">People</span><h2>Technical Documentation & Diagrams</h2></div>
+        <pre><button class="copy">Copy</button><code>%% Mermaid: C4-ish system context
+flowchart LR
+  user[User] --> web[Web App]
+  web --> api[API]
+  api --> db[(DB)]
+</code></pre>
+      </article>
+
+      <article class="card topic" id="biz-alignment" data-title="Aligning architecture with business goals" data-category="Soft Skills">
+        <div class="title"><span class="tag">People</span><h2>Aligning with Business Goals</h2></div>
+        <p>Every architecture choice should trace to a measurable business outcome (revenue, retention, risk).</p>
+      </article>
+
+      <!-- ===== Practical Tools ===== -->
+      <article class="card topic" id="diagramming" data-title="Diagramming & Modeling (C4/UML/PlantUML/Mermaid)" data-category="Tools">
+        <div class="title"><span class="tag">Tools</span><h2>Diagramming & Modeling</h2></div>
+        <ul>
+          <li><strong>C4</strong> for context/container/component; <strong>UML</strong> for sequence/state.</li>
+          <li><strong>PlantUML/Mermaid</strong> keep diagrams in version control.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="agile" data-title="Project Management (Scrum/Kanban/SAFe)" data-category="Tools">
+        <div class="title"><span class="tag">Tools</span><h2>Project Management & Agile</h2></div>
+        <ul>
+          <li>Scrum for iterative delivery; Kanban for flow; SAFe for large programs.</li>
+        </ul>
+      </article>
+
+      <article class="card topic" id="collab" data-title="Collaboration tools (Jira/Confluence/Miro/Notion)" data-category="Tools">
+        <div class="title"><span class="tag">Tools</span><h2>Collaboration Tools</h2></div>
+        <ul>
+          <li>Jira (tracking), Confluence/Notion (docs), Miro (workshops), RFCs for proposals.</li>
+        </ul>
+      </article>
+
+      <!-- ===== Roadmap ===== -->
+      <article class="card topic" id="roadmap" data-title="Roadmap: Senior Dev → Architect" data-category="Roadmap">
+        <div class="title"><span class="tag">Roadmap</span><h2>Roadmap Approach</h2></div>
+        <ol>
+          <li><strong>Master principles</strong>: SOLID/DRY/KISS/YAGNI, SoC, DI.</li>
+          <li><strong>Learn styles</strong>: layered → hexagonal; understand monolith vs microservices.</li>
+          <li><strong>Scale</strong>: caching, queues, observability, HA/DR.</li>
+          <li><strong>Cloud</strong>: containers, Kubernetes, IaC, CI/CD.</li>
+          <li><strong>Data</strong>: SQL/NoSQL, CAP, warehousing, ES/CQRS.</li>
+          <li><strong>Security</strong>: authn/z, OWASP, encryption, compliance basics.</li>
+          <li><strong>Lead</strong>: docs, ADRs, mentoring, stakeholder comms.</li>
+        </ol>
+      </article>
+
+      <div class="footer">Made as a single self‑contained page. No external deps. © 2025</div>
+    </section>
+  </main>
+
+  <script>
+    // --- Utilities ---
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+
+    // Attach copy buttons to code blocks
+    function attachCopy(){
+      $$("pre").forEach(pre => {
+        const btn = pre.querySelector('.copy');
+        if(!btn) return;
+        btn.addEventListener('click', async () => {
+          const code = pre.querySelector('code').innerText;
+          try{ await navigator.clipboard.writeText(code); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1200);}catch{btn.textContent='Error';}
+        });
+      });
+    }
+
+    // Build topic buttons from articles
+    function buildNav(){
+      const topics = $$(".topic").map(a => ({ id:a.id, title:a.dataset.title, category:a.dataset.category }));
+      // Sort by category then title
+      topics.sort((a,b)=> (a.category||'').localeCompare(b.category||'') || a.title.localeCompare(b.title));
+
+      const strip = $("#topicStrip"); strip.innerHTML = '';
+      topics.forEach(t => {
+        const btn = document.createElement('button');
+        btn.className = 'topic-btn chip'; btn.textContent = t.title; btn.dataset.id = t.id; btn.dataset.category = t.category;
+        btn.addEventListener('click', ()=> showTopic(t.id, true));
+        strip.appendChild(btn);
+      });
+
+      // Category filter
+      const cats = Array.from(new Set(topics.map(t=>t.category))).sort();
+      const catSel = $("#categoryFilter");
+      catSel.innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+      catSel.addEventListener('change', () => applyFilters());
+
+      // Sidebar (subtopics for current category)
+      buildSidebar();
+    }
+
+    function buildSidebar(currentCategory){
+      const side = $("#sideList");
+      const topics = $$(".topic").map(a => ({ id:a.id, title:a.dataset.title, category:a.dataset.category }));
+      const cat = currentCategory || $('#categoryFilter').value || (localStorage.getItem('lastCat')||'');
+      const filtered = topics.filter(t => !cat || t.category === cat);
+      $('#sideTitle').textContent = cat ? `${cat} — Subtopics` : 'All Subtopics';
+      side.innerHTML = '';
+      filtered.forEach(t => {
+        const a = document.createElement('a'); a.href = '#'; a.textContent = t.title; a.className='sidelink'; a.addEventListener('click', (e)=>{e.preventDefault(); showTopic(t.id, true);});
+        side.appendChild(a);
+      });
+    }
+
+    function applyFilters(){
+      const term = $('#search').value.trim().toLowerCase();
+      const cat = $('#categoryFilter').value;
+      $$('#topicStrip .topic-btn').forEach(b => {
+        const matchTerm = !term || b.textContent.toLowerCase().includes(term);
+        const matchCat = !cat || b.dataset.category === cat;
+        b.classList.toggle('hidden', !(matchTerm && matchCat));
+      });
+      buildSidebar(cat);
+      localStorage.setItem('lastCat', cat||'');
+    }
+
+    // Show a single topic; optionally scroll to top
+    function showTopic(id, remember){
+      $$('.topic').forEach(t => t.classList.add('hidden'));
+      const el = document.getElementById(id); if(!el) return;
+      el.classList.remove('hidden');
+      $$('#sideList .sidelink').forEach(a=> a.classList.toggle('active', a.textContent === el.dataset.title));
+      $$('#topicStrip .topic-btn').forEach(b=> b.classList.toggle('chip-active', b.dataset.id===id));
+      if(remember){ localStorage.setItem('lastTopic', id); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Print current topic
+    $('#printBtn').addEventListener('click', ()=>{
+      window.print();
+    });
+
+    // Expand/Collapse controls
+    $('#expandAllBtn').addEventListener('click', ()=>{
+      $$('.topic').forEach(t => t.classList.remove('hidden'));
+    });
+    $('#collapseAllBtn').addEventListener('click', ()=>{
+      const id = localStorage.getItem('lastTopic') || 'fundamentals';
+      showTopic(id, false);
+    });
+
+    // Search handlers
+    $('#search').addEventListener('keypress', (e)=>{ if(e.key==='Enter'){ applyFilters(); const firstVisible=$$('#topicStrip .topic-btn:not(.hidden)')[0]; if(firstVisible){ showTopic(firstVisible.dataset.id, true); }} });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='/' && document.activeElement.tagName!=='INPUT'){ e.preventDefault(); $('#search').focus(); }});
+
+    // Initialize
+    attachCopy();
+    buildNav();
+    applyFilters();
+    const last = localStorage.getItem('lastTopic') || 'fundamentals';
+    showTopic(last, false);
+  </script>
+</body>
+</html>

@@ -14,6 +14,8 @@
       --accent-2:#a78bfa;  /* violet */
       --ok:#22c55e; --bad:#ef4444; --warn:#eab308;
       --radius:14px;
+      --mobile-padding: 0.75rem;
+      --desktop-padding: 1rem;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -21,93 +23,385 @@
       margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
       background:linear-gradient(180deg, #0b1220 0%, #0b1220 40%, #0e1628 100%);
       color:var(--text);
+      font-size: 16px;
     }
+    
+    /* --- Mobile First Responsive Design --- */
     /* --- Topbar --- */
     header{
       position:sticky; top:0; z-index:50;
       backdrop-filter: saturate(180%) blur(10px);
-      background:rgba(15,23,42,.85);
+      background:rgba(15,23,42,.95);
       border-bottom:1px solid rgba(148,163,184,.15);
     }
-    .topbar{display:flex; gap:.75rem; align-items:center; padding:.75rem 1rem; flex-wrap:wrap}
-    .brand{font-weight:700; letter-spacing:.3px}
-    .search{flex:1; min-width:180px}
-    .search input{
-      width:100%; padding:.65rem .9rem; border-radius:999px; border:1px solid rgba(148,163,184,.25);
-      background:#0b1220; color:var(--text);
+    .topbar{
+      display:flex; 
+      flex-direction: column;
+      gap:.5rem; 
+      align-items:stretch; 
+      padding:var(--mobile-padding);
     }
-    .filters{display:flex; gap:.5rem; align-items:center}
-    select, button, .chip{background:#0b1220; color:var(--text); border:1px solid rgba(148,163,184,.25); border-radius:999px; padding:.55rem .8rem}
+    .topbar-row{
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .brand{
+      font-weight:700; 
+      letter-spacing:.3px;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .search{
+      flex:1; 
+      min-width:0;
+    }
+    .search input{
+      width:100%; 
+      padding:.6rem .8rem; 
+      border-radius:999px; 
+      border:1px solid rgba(148,163,184,.25);
+      background:#0b1220; 
+      color:var(--text);
+      font-size: 16px; /* Prevents zoom on iOS */
+    }
+    .filters{
+      display:flex; 
+      gap:.375rem; 
+      align-items:center;
+      flex-wrap: wrap;
+      width: 100%;
+      justify-content: space-between;
+    }
+    .mobile-menu-toggle{
+      display: block;
+      background: none;
+      border: 1px solid rgba(148,163,184,.25);
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+    select, button, .chip{
+      background:#0b1220; 
+      color:var(--text); 
+      border:1px solid rgba(148,163,184,.25); 
+      border-radius:999px; 
+      padding:.45rem .65rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
     button{cursor:pointer}
     button:hover, .chip:hover{border-color:rgba(34,211,238,.6)}
+    button:focus, select:focus, .search input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
 
     /* --- Topic scroller --- */
-    .topic-strip{display:flex; gap:.5rem; overflow:auto; padding:.5rem 1rem 1rem; scroll-snap-type:x mandatory}
-    .topic-strip::-webkit-scrollbar{height:8px}
-    .topic-strip::-webkit-scrollbar-thumb{background:rgba(148,163,184,.3); border-radius:999px}
-    .topic-btn{scroll-snap-align:start; white-space:nowrap}
+    .topic-strip{
+      display:flex; 
+      gap:.375rem; 
+      overflow-x:auto; 
+      overflow-y: hidden;
+      padding:.5rem var(--mobile-padding) .75rem; 
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .topic-strip::-webkit-scrollbar{height:6px}
+    .topic-strip::-webkit-scrollbar-thumb{background:rgba(148,163,184,.4); border-radius:999px}
+    .topic-strip::-webkit-scrollbar-track{background:rgba(148,163,184,.1)}
+    .topic-btn{
+      scroll-snap-align:start; 
+      white-space:nowrap;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+    }
+    .topic-btn.chip-active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
 
-    /* --- Layout --- */
-    main{max-width:1200px; margin:1.25rem auto; padding:0 1rem; display:grid; grid-template-columns: 300px 1fr; gap:1rem}
-    @media (max-width: 980px){ main{grid-template-columns:1fr} }
-
+    /* --- Mobile Layout --- */
+    main{
+      max-width:1200px; 
+      margin:0.5rem auto; 
+      padding:0 var(--mobile-padding); 
+      display:block;
+    }
+    
+    .mobile-sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 60;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .mobile-sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
     /* --- Sidebar (subtopics for current category) --- */
-    .sidebar{background:var(--panel); border:1px solid rgba(148,163,184,.15); border-radius:var(--radius); padding:1rem; position:sticky; top:84px; height:fit-content}
-    .sidebar h3{margin:.25rem 0 .5rem; color:var(--muted); font-weight:600; font-size:.9rem; letter-spacing:.04em}
-    .sidelist{display:flex; flex-direction:column; gap:.4rem; max-height:70vh; overflow:auto}
-    .sidelink{border-radius:10px; padding:.45rem .6rem; text-decoration:none; color:var(--text); border:1px solid transparent}
+    .sidebar{
+      background:var(--panel); 
+      border:1px solid rgba(148,163,184,.15); 
+      border-radius:var(--radius); 
+      padding:1rem;
+      margin-bottom: 1rem;
+      /* Mobile: Show as collapsible section */
+      position: relative;
+    }
+    .sidebar-mobile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 0.5rem 0;
+    }
+    .sidebar-mobile-toggle {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      transform: rotate(0deg);
+      transition: transform 0.3s ease;
+    }
+    .sidebar-mobile-toggle.active {
+      transform: rotate(180deg);
+    }
+    .sidebar-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .sidebar-content.active {
+      max-height: 400px;
+    }
+    .sidebar h3{
+      margin:.25rem 0 .5rem; 
+      color:var(--muted); 
+      font-weight:600; 
+      font-size:.9rem; 
+      letter-spacing:.04em;
+    }
+    .sidelist{
+      display:flex; 
+      flex-direction:column; 
+      gap:.4rem;
+    }
+    .sidelink{
+      border-radius:10px; 
+      padding:.45rem .6rem; 
+      text-decoration:none; 
+      color:var(--text); 
+      border:1px solid transparent;
+      display: block;
+    }
     .sidelink:hover{background:#0b1220; border-color:rgba(148,163,184,.25)}
     .sidelink.active{background:linear-gradient(90deg, rgba(34,211,238,.13), rgba(167,139,250,.13)); border-color:rgba(34,211,238,.5)}
 
     /* --- Content cards --- */
-    .card{background:var(--panel); border:1px solid rgba(148,163,184,.15); border-radius:var(--radius); padding:1.2rem}
-    .title{display:flex; align-items:center; gap:.6rem}
-    .title .tag{font-size:.75rem; color:var(--muted); border:1px dashed rgba(148,163,184,.35); padding:.15rem .5rem; border-radius:999px}
-    h2{margin:.2rem 0 .6rem}
-    h4{margin:1.1rem 0 .35rem}
-    p{line-height:1.65}
-    ul{line-height:1.65; margin:.25rem 0 .75rem 1.1rem}
-    .grid{display:grid; gap:1rem; grid-template-columns:repeat(2, minmax(0, 1fr))}
-    @media (max-width: 720px){ .grid{grid-template-columns:1fr} }
-    .note{font-size:.9rem; color:var(--muted)}
+    .card{
+      background:var(--panel); 
+      border:1px solid rgba(148,163,184,.15); 
+      border-radius:var(--radius); 
+      padding:1rem;
+      margin-bottom: 1rem;
+    }
+    .title{
+      display:flex; 
+      align-items:flex-start; 
+      gap:.6rem;
+      flex-wrap: wrap;
+    }
+    .title .tag{
+      font-size:.75rem; 
+      color:var(--muted); 
+      border:1px dashed rgba(148,163,184,.35); 
+      padding:.15rem .5rem; 
+      border-radius:999px;
+      flex-shrink: 0;
+    }
+    h1 { font-size: 1.8rem; margin: 0.5rem 0; }
+    h2 { font-size: 1.5rem; margin:.4rem 0 .8rem; line-height: 1.3; }
+    h3 { font-size: 1.3rem; margin: 1rem 0 0.5rem; }
+    h4 { font-size: 1.1rem; margin:1rem 0 .5rem; font-weight: 600; }
+    p{line-height:1.6; margin: 0.75rem 0;}
+    ul, ol{line-height:1.6; margin:.5rem 0 1rem; padding-left: 1.25rem;}
+    li { margin: 0.25rem 0; }
+    .grid{
+      display:grid; 
+      gap:1rem; 
+      grid-template-columns:1fr;
+      margin: 1rem 0;
+    }
+    .note{font-size:.9rem; color:var(--muted); margin: 0.75rem 0; padding: 0.75rem; background: rgba(148,163,184,0.05); border-radius: 8px; border-left: 3px solid var(--muted);}
     .good{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
 
     /* --- Code blocks --- */
-    pre{position:relative; background:#0b1220; border:1px solid rgba(148,163,184,.2); color:#e6edf6; border-radius:12px; padding:1rem; overflow:auto}
-    code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:.92rem}
-    .copy{position:absolute; top:.5rem; right:.5rem; border-radius:8px}
+    pre{
+      position:relative; 
+      background:#0b1220; 
+      border:1px solid rgba(148,163,184,.2); 
+      color:#e6edf6; 
+      border-radius:12px; 
+      padding:0.75rem; 
+      margin: 1rem 0;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; 
+      font-size:.85rem;
+      line-height: 1.4;
+    }
+    .copy{
+      position:absolute; 
+      top:.5rem; 
+      right:.5rem; 
+      border-radius:8px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      z-index: 10;
+    }
+    
+    /* Inline code */
+    p code, li code {
+      background: rgba(148,163,184,.15);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
 
     /* --- Utilities --- */
     .hidden{display:none}
     .muted{color:var(--muted)}
-    .actions{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.5rem 0 1rem}
-    .pill{background:transparent; border:1px solid rgba(148,163,184,.3); padding:.2rem .55rem; border-radius:999px; font-size:.8rem}
-    .kbd{display:inline-block; border:1px solid rgba(148,163,184,.35); border-bottom-width:2px; border-radius:6px; padding:.05rem .3rem; font-size:.8rem; background:#0b1220}
+    .actions{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.75rem 0}
+    .pill{background:transparent; border:1px solid rgba(148,163,184,.3); padding:.3rem .6rem; border-radius:999px; font-size:.8rem}
+    .kbd{display:inline-block; border:1px solid rgba(148,163,184,.35); border-bottom-width:2px; border-radius:6px; padding:.15rem .4rem; font-size:.8rem; background:#0b1220}
     .footer{color:var(--muted); text-align:center; padding:2rem 1rem 3rem}
-    a{color:var(--accent)}
+    a{color:var(--accent); text-decoration: none;}
+    a:hover { text-decoration: underline; }
     .category-label{font-size:.75rem; color:var(--muted)}
+    
+    /* --- Tablet Styles --- */
+    @media (min-width: 768px) {
+      body { font-size: 17px; }
+      .topbar {
+        flex-direction: row;
+        align-items: center;
+        padding: var(--desktop-padding);
+        gap: 1rem;
+      }
+      .topbar-row {
+        display: contents;
+      }
+      .mobile-menu-toggle { display: none; }
+      .filters {
+        width: auto;
+        justify-content: flex-end;
+      }
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .card {
+        padding: 1.2rem;
+      }
+      .topic-strip {
+        padding: 0.75rem var(--desktop-padding) 1rem;
+      }
+      main {
+        margin: 1rem auto;
+        padding: 0 var(--desktop-padding);
+      }
+    }
+    
+    /* --- Desktop Styles --- */
+    @media (min-width: 980px) {
+      main {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 1.5rem;
+        align-items: start;
+      }
+      .sidebar {
+        position: sticky;
+        top: 120px;
+        height: fit-content;
+        margin-bottom: 0;
+      }
+      .sidebar-mobile-header { display: none; }
+      .sidebar-content {
+        max-height: none;
+        overflow: visible;
+      }
+      .sidelist {
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+    }
+    
+    /* --- Print Styles --- */
+    @media print {
+      header { display: none; }
+      .sidebar { display: none; }
+      main { 
+        display: block; 
+        max-width: none; 
+        margin: 0; 
+        padding: 0;
+      }
+      .card {
+        break-inside: avoid;
+        margin-bottom: 2rem;
+      }
+      pre {
+        break-inside: avoid;
+      }
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="topbar">
-      <div class="brand">🧭 Software Architect Guide</div>
-      <div class="search"><input id="search" placeholder="Search topics (e.g. 'CQRS', 'Kubernetes', 'DRY') — press Enter" /></div>
-      <div class="filters">
+      <div class="topbar-row">
+        <div class="brand">🧭 Software Architect Guide</div>
+        <div class="search"><input id="search" placeholder="Search topics..." /></div>
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" title="Toggle filters">⚙️</button>
+      </div>
+      <div class="filters" id="filtersMenu">
         <select id="categoryFilter" title="Filter by category"></select>
-        <button id="printBtn" title="Print current topic">🖨️ Print</button>
-        <button id="expandAllBtn" title="Show all topics">📚 Expand</button>
-        <button id="collapseAllBtn" title="Show only selected">🗂️ Collapse</button>
+        <button id="printBtn" title="Print current topic">🖨️</button>
+        <button id="expandAllBtn" title="Show all topics">📚</button>
+        <button id="collapseAllBtn" title="Show only selected">🗂️</button>
       </div>
     </div>
     <div class="topic-strip" id="topicStrip" aria-label="All topics"></div>
   </header>
 
+  <div class="mobile-sidebar-overlay" id="mobileOverlay"></div>
   <main>
     <aside class="sidebar">
-      <h3 id="sideTitle">Subtopics</h3>
-      <div class="sidelist" id="sideList"></div>
-      <div class="note" style="margin-top:.75rem">Tip: press <span class="kbd">/</span> to jump to search. Your last opened topic is remembered.</div>
+      <div class="sidebar-mobile-header">
+        <h3 id="sideTitle">Subtopics</h3>
+        <button class="sidebar-mobile-toggle" id="sidebarToggle">▼</button>
+      </div>
+      <div class="sidebar-content" id="sidebarContent">
+        <div class="sidelist" id="sideList"></div>
+        <div class="note" style="margin-top:.75rem">Tip: press <span class="kbd">/</span> to jump to search. Your last opened topic is remembered.</div>
+      </div>
     </aside>
 
     <section id="contentArea">
@@ -987,14 +1281,286 @@ remote.PressButton(); // The light is off
 
       <!-- Enterprise patterns -->
       <article class="card topic" id="repository" data-title="Repository" data-category="Patterns: Enterprise">
-        <div class="title"><span class="tag">Enterprise</span><h2>Repository</h2></div>
-        <p>Collection-like abstraction over persistence; hides ORM details from domain.</p>
-        <pre><button class="copy">Copy</button><code>public interface IOrderRepo { Task<Order?> Get(Guid id); Task Save(Order o); }</code></pre>
+        <div class="title"><span class="tag">Enterprise</span><h2>Repository Pattern</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>The Repository pattern encapsulates the logic needed to access data sources. It centralizes common data access functionality, providing better maintainability and decoupling the infrastructure or technology used to access databases from the domain model layer. It provides a collection-like interface for accessing domain objects.</p>
+        
+        <h4>Core Learning</h4>
+        <p>Use Repository when you want to decouple business logic from data access logic. It creates a uniform interface for accessing your domain objects, regardless of whether you're using SQL Server, MongoDB, or in-memory storage. This pattern is especially powerful when combined with Unit of Work and Dependency Injection.</p>
+        
+        <h4>Example (C# with Entity Framework)</h4>
+        <pre><button class="copy">Copy</button><code>// Domain entity
+public class Order {
+  public Guid Id { get; set; }
+  public string CustomerEmail { get; set; }
+  public decimal TotalAmount { get; set; }
+  public DateTime CreatedAt { get; set; }
+  public List<OrderItem> Items { get; set; } = new();
+}
+
+// Repository interface (in domain layer)
+public interface IOrderRepository {
+  Task<Order?> GetByIdAsync(Guid id);
+  Task<Order?> GetByCustomerEmailAsync(string email);
+  Task<IEnumerable<Order>> GetOrdersCreatedAfterAsync(DateTime date);
+  Task AddAsync(Order order);
+  Task UpdateAsync(Order order);
+  Task DeleteAsync(Guid id);
+}
+
+// Repository implementation (in infrastructure layer)
+public class OrderRepository : IOrderRepository {
+  private readonly AppDbContext _context;
+  
+  public OrderRepository(AppDbContext context) => _context = context;
+  
+  public async Task<Order?> GetByIdAsync(Guid id) {
+    return await _context.Orders
+      .Include(o => o.Items)
+      .FirstOrDefaultAsync(o => o.Id == id);
+  }
+  
+  public async Task<Order?> GetByCustomerEmailAsync(string email) {
+    return await _context.Orders
+      .Include(o => o.Items)
+      .FirstOrDefaultAsync(o => o.CustomerEmail == email);
+  }
+  
+  public async Task<IEnumerable<Order>> GetOrdersCreatedAfterAsync(DateTime date) {
+    return await _context.Orders
+      .Where(o => o.CreatedAt > date)
+      .ToListAsync();
+  }
+  
+  public async Task AddAsync(Order order) {
+    await _context.Orders.AddAsync(order);
+  }
+  
+  public async Task UpdateAsync(Order order) {
+    _context.Orders.Update(order);
+  }
+  
+  public async Task DeleteAsync(Guid id) {
+    var order = await GetByIdAsync(id);
+    if (order != null) {
+      _context.Orders.Remove(order);
+    }
+  }
+}
+
+// Usage in application service
+public class OrderService {
+  private readonly IOrderRepository _orderRepo;
+  private readonly IUnitOfWork _unitOfWork;
+  
+  public OrderService(IOrderRepository orderRepo, IUnitOfWork unitOfWork) {
+    _orderRepo = orderRepo;
+    _unitOfWork = unitOfWork;
+  }
+  
+  public async Task<Order> CreateOrderAsync(string customerEmail, decimal amount) {
+    var order = new Order {
+      Id = Guid.NewGuid(),
+      CustomerEmail = customerEmail,
+      TotalAmount = amount,
+      CreatedAt = DateTime.UtcNow
+    };
+    
+    await _orderRepo.AddAsync(order);
+    await _unitOfWork.SaveChangesAsync();
+    
+    return order;
+  }
+}</code></pre>
+        
+        <h4>Benefits & Trade-offs</h4>
+        <div class="grid">
+          <div>
+            <h4>Benefits</h4>
+            <ul>
+              <li class="good"><strong>Testability:</strong> Easy to mock for unit tests</li>
+              <li class="good"><strong>Flexibility:</strong> Switch data stores without changing business logic</li>
+              <li class="good"><strong>Centralized Queries:</strong> All data access logic in one place</li>
+              <li class="good"><strong>Domain Focus:</strong> Business logic doesn't know about SQL or databases</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Trade-offs</h4>
+            <ul>
+              <li class="warn"><strong>Abstraction Overhead:</strong> Extra layer can hide performance issues</li>
+              <li class="warn"><strong>Generic vs Specific:</strong> Balance between reusable and specific methods</li>
+              <li class="bad"><strong>Over-abstraction:</strong> Don't create repositories for simple CRUD if ORM already provides good abstraction</li>
+            </ul>
+          </div>
+        </div>
+        
+        <p class="note"><strong>Best Practice:</strong> Repository works best with aggregate roots in DDD. Avoid creating repositories for every entity - focus on meaningful domain boundaries.</p>
       </article>
 
       <article class="card topic" id="uow" data-title="Unit of Work" data-category="Patterns: Enterprise">
-        <div class="title"><span class="tag">Enterprise</span><h2>Unit of Work</h2></div>
-        <p>Track changes as a business transaction; commit once.</p>
+        <div class="title"><span class="tag">Enterprise</span><h2>Unit of Work Pattern</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>The Unit of Work pattern maintains a list of objects affected by a business transaction and coordinates writing out changes and resolving concurrency problems. It tracks all changes made during a business transaction and ensures that all changes are committed or rolled back as a single atomic operation.</p>
+        
+        <h4>Core Learning</h4>
+        <p>Unit of Work ensures data consistency by treating a series of operations as a single transaction. Instead of saving each change immediately, it collects all changes and commits them together. This prevents partial updates that could leave your data in an inconsistent state and improves performance by reducing database round trips.</p>
+        
+        <h4>Example (C# Implementation)</h4>
+        <pre><button class="copy">Copy</button><code>// Unit of Work interface
+public interface IUnitOfWork : IDisposable {
+  IOrderRepository Orders { get; }
+  ICustomerRepository Customers { get; }
+  IProductRepository Products { get; }
+  
+  Task<int> SaveChangesAsync();
+  Task BeginTransactionAsync();
+  Task CommitTransactionAsync();
+  Task RollbackTransactionAsync();
+}
+
+// Unit of Work implementation with Entity Framework
+public class UnitOfWork : IUnitOfWork {
+  private readonly AppDbContext _context;
+  private IDbContextTransaction? _transaction;
+  
+  // Lazy initialization of repositories
+  private IOrderRepository? _orders;
+  private ICustomerRepository? _customers;
+  private IProductRepository? _products;
+  
+  public UnitOfWork(AppDbContext context) {
+    _context = context;
+  }
+  
+  public IOrderRepository Orders => 
+    _orders ??= new OrderRepository(_context);
+    
+  public ICustomerRepository Customers => 
+    _customers ??= new CustomerRepository(_context);
+    
+  public IProductRepository Products => 
+    _products ??= new ProductRepository(_context);
+  
+  public async Task<int> SaveChangesAsync() {
+    try {
+      return await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException ex) {
+      // Handle concurrency conflicts
+      throw new ConcurrencyException("Data was modified by another user", ex);
+    }
+  }
+  
+  public async Task BeginTransactionAsync() {
+    _transaction = await _context.Database.BeginTransactionAsync();
+  }
+  
+  public async Task CommitTransactionAsync() {
+    if (_transaction != null) {
+      await _transaction.CommitAsync();
+      await _transaction.DisposeAsync();
+      _transaction = null;
+    }
+  }
+  
+  public async Task RollbackTransactionAsync() {
+    if (_transaction != null) {
+      await _transaction.RollbackAsync();
+      await _transaction.DisposeAsync();
+      _transaction = null;
+    }
+  }
+  
+  public void Dispose() {
+    _transaction?.Dispose();
+    _context.Dispose();
+  }
+}
+
+// Usage in application service
+public class ECommerceService {
+  private readonly IUnitOfWork _unitOfWork;
+  
+  public ECommerceService(IUnitOfWork unitOfWork) {
+    _unitOfWork = unitOfWork;
+  }
+  
+  public async Task ProcessOrderAsync(CreateOrderRequest request) {
+    await _unitOfWork.BeginTransactionAsync();
+    
+    try {
+      // Multiple operations that must succeed or fail together
+      var customer = await _unitOfWork.Customers.GetByIdAsync(request.CustomerId);
+      if (customer == null) {
+        throw new CustomerNotFoundException();
+      }
+      
+      var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId);
+      if (product == null || product.Stock < request.Quantity) {
+        throw new InsufficientStockException();
+      }
+      
+      // Create order
+      var order = new Order {
+        CustomerId = request.CustomerId,
+        ProductId = request.ProductId,
+        Quantity = request.Quantity,
+        TotalAmount = product.Price * request.Quantity
+      };
+      
+      await _unitOfWork.Orders.AddAsync(order);
+      
+      // Update product stock
+      product.Stock -= request.Quantity;
+      await _unitOfWork.Products.UpdateAsync(product);
+      
+      // Update customer points
+      customer.LoyaltyPoints += (int)(order.TotalAmount * 0.1m);
+      await _unitOfWork.Customers.UpdateAsync(customer);
+      
+      // Commit all changes as a single transaction
+      await _unitOfWork.SaveChangesAsync();
+      await _unitOfWork.CommitTransactionAsync();
+      
+    }
+    catch (Exception) {
+      await _unitOfWork.RollbackTransactionAsync();
+      throw;
+    }
+  }
+}
+
+// Dependency Injection setup (in Program.cs or Startup.cs)
+services.AddScoped<IUnitOfWork, UnitOfWork>();
+services.AddScoped<IOrderRepository, OrderRepository>();
+services.AddScoped<ICustomerRepository, CustomerRepository>();
+services.AddScoped<IProductRepository, ProductRepository>();</code></pre>
+        
+        <h4>Benefits & Considerations</h4>
+        <div class="grid">
+          <div>
+            <h4>Benefits</h4>
+            <ul>
+              <li class="good"><strong>Atomicity:</strong> All-or-nothing operations ensure data consistency</li>
+              <li class="good"><strong>Performance:</strong> Reduces database round trips by batching changes</li>
+              <li class="good"><strong>Transaction Management:</strong> Centralized control over database transactions</li>
+              <li class="good"><strong>Testability:</strong> Easy to test complex business operations</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Considerations</h4>
+            <ul>
+              <li class="warn"><strong>Complexity:</strong> Adds abstraction layer that might be overkill for simple apps</li>
+              <li class="warn"><strong>Memory Usage:</strong> Holds objects in memory until commit</li>
+              <li class="warn"><strong>Long Transactions:</strong> Can lead to deadlocks if transactions are too long</li>
+              <li class="note"><strong>ORM Integration:</strong> Modern ORMs like EF Core already implement this pattern</li>
+            </ul>
+          </div>
+        </div>
+        
+        <p class="note"><strong>Modern Note:</strong> Entity Framework Core's DbContext already implements Unit of Work pattern. You might not need a separate implementation unless you're working with multiple contexts or want additional abstraction.</p>
       </article>
 
       <article class="card topic" id="cqrs" data-title="CQRS" data-category="Patterns: Enterprise">
@@ -1015,39 +1581,656 @@ remote.PressButton(); // The light is off
       <!-- ===== Architecture Styles & DDD ===== -->
       <article class="card topic" id="mono-vs-distributed" data-title="Monoliths vs. Distributed" data-category="Architecture Styles">
         <div class="title"><span class="tag">Style</span><h2>Monoliths vs. Distributed Systems</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>The fundamental architectural decision between monolithic and distributed systems affects every aspect of your application: development, deployment, scaling, and maintenance. Understanding when to choose each approach is crucial for long-term success.</p>
+        
+        <h4>Core Learning</h4>
+        <p>Start with a <strong>modular monolith</strong> and evolve to distributed systems only when you have clear business drivers. Distributed systems solve organizational and scaling problems but introduce significant operational complexity. The decision should be driven by team size, business requirements, and technical constraints - not by technology trends.</p>
+        
         <div class="grid">
           <div>
-            <h4>Monolith</h4>
+            <h4>Monolithic Architecture</h4>
+            <p><strong>Definition:</strong> Single deployable unit containing all application functionality.</p>
+            
+            <h5>Benefits:</h5>
             <ul>
-              <li>Simple deployment, easy debugging.</li>
-              <li>Vertical scaling first; modular monolith recommended initially.</li>
+              <li class="good"><strong>Simplicity:</strong> Easy to develop, test, debug, and deploy initially</li>
+              <li class="good"><strong>Performance:</strong> No network calls between components</li>
+              <li class="good"><strong>ACID Transactions:</strong> Database consistency is straightforward</li>
+              <li class="good"><strong>Debugging:</strong> Single process, easier to trace issues</li>
+              <li class="good"><strong>Tooling:</strong> Mature development and monitoring tools</li>
+            </ul>
+            
+            <h5>Challenges:</h5>
+            <ul>
+              <li class="bad"><strong>Scaling Limitations:</strong> Must scale the entire application</li>
+              <li class="bad"><strong>Technology Lock-in:</strong> Difficult to adopt new technologies</li>
+              <li class="bad"><strong>Team Coordination:</strong> Single codebase can become bottleneck</li>
+              <li class="warn"><strong>Deployment Risk:</strong> Single point of failure for deployments</li>
+            </ul>
+            
+            <h5>When to Use:</h5>
+            <ul>
+              <li>Starting a new project or prototype</li>
+              <li>Small to medium teams (< 10-15 developers)</li>
+              <li>Predictable load patterns</li>
+              <li>Strong consistency requirements</li>
             </ul>
           </div>
+          
           <div>
-            <h4>Distributed (microservices, SOA, EDA)</h4>
+            <h4>Distributed Systems</h4>
+            <p><strong>Definition:</strong> Multiple independent services that communicate over the network to provide business functionality.</p>
+            
+            <h5>Benefits:</h5>
             <ul>
-              <li>Independent scaling & releases; team autonomy.</li>
-              <li>Added <strong>operational complexity</strong>: networking, observability, data consistency.</li>
+              <li class="good"><strong>Independent Scaling:</strong> Scale only the services that need it</li>
+              <li class="good"><strong>Technology Diversity:</strong> Use the right tool for each service</li>
+              <li class="good"><strong>Team Autonomy:</strong> Teams can work independently</li>
+              <li class="good"><strong>Fault Isolation:</strong> Failure in one service doesn't bring down everything</li>
+              <li class="good"><strong>Deployment Independence:</strong> Deploy services separately</li>
+            </ul>
+            
+            <h5>Challenges:</h5>
+            <ul>
+              <li class="bad"><strong>Operational Complexity:</strong> Monitoring, logging, debugging across services</li>
+              <li class="bad"><strong>Network Latency:</strong> Performance overhead of network calls</li>
+              <li class="bad"><strong>Data Consistency:</strong> Eventual consistency and distributed transactions</li>
+              <li class="bad"><strong>Testing Complexity:</strong> Integration testing across services</li>
+              <li class="warn"><strong>Distributed System Fallacies:</strong> Network is unreliable, bandwidth is limited</li>
+            </ul>
+            
+            <h5>When to Use:</h5>
+            <ul>
+              <li>Large teams (> 15-20 developers)</li>
+              <li>Different scaling requirements per component</li>
+              <li>Need for different technologies per service</li>
+              <li>Mature DevOps practices in place</li>
             </ul>
           </div>
         </div>
-        <p class="note">Rule of thumb: start modular monolith; extract services when driven by team boundaries and scaling hotspots.</p>
+        
+        <h4>Migration Strategy: Modular Monolith First</h4>
+        <pre><button class="copy">Copy</button><code>// Example: Modular Monolith Structure in .NET
+MyECommerceApp/
+├── src/
+│   ├── Catalog/           // Bounded Context as Module
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   └── Infrastructure/
+│   ├── Orders/            // Another Bounded Context
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   └── Infrastructure/
+│   ├── Customers/
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   └── Infrastructure/
+│   └── Web/               // Presentation Layer
+│       ├── Controllers/
+│       └── Views/
+└── tests/
+
+// Each module has clear boundaries but shares database and deployment
+// Can be extracted to microservices later when needed
+
+// Module interface example
+public interface ICatalogModule {
+    Task<ProductDto> GetProductAsync(Guid productId);
+    Task<IEnumerable<ProductDto>> SearchProductsAsync(string query);
+}
+
+// Implementation stays within module boundaries
+internal class CatalogModule : ICatalogModule {
+    private readonly ICatalogRepository _repository;
+    
+    public CatalogModule(ICatalogRepository repository) {
+        _repository = repository;
+    }
+    
+    public async Task<ProductDto> GetProductAsync(Guid productId) {
+        var product = await _repository.GetByIdAsync(productId);
+        return product?.ToDto();
+    }
+}</code></pre>
+        
+        <h4>Decision Framework</h4>
+        <div class="grid">
+          <div>
+            <h5>Start with Monolith when:</h5>
+            <ul>
+              <li>Team size < 15 developers</li>
+              <li>Product is in early stages</li>
+              <li>Domain boundaries are unclear</li>
+              <li>Strong consistency is required</li>
+              <li>Limited DevOps maturity</li>
+            </ul>
+          </div>
+          <div>
+            <h5>Consider Distribution when:</h5>
+            <ul>
+              <li>Clear team/domain boundaries</li>
+              <li>Different scaling requirements</li>
+              <li>Need for technology diversity</li>
+              <li>Mature CI/CD and monitoring</li>
+              <li>Teams can handle operational complexity</li>
+            </ul>
+          </div>
+        </div>
+        
+        <p class="note"><strong>Netflix's Approach:</strong> "We don't advocate for microservices. We advocate for teams owning the full lifecycle of their services. Microservices are a means to that end, not the end itself." - Start with what works for your team size and scale.</p>
       </article>
 
       <article class="card topic" id="layered" data-title="Layered (N-tier)" data-category="Architecture Styles">
         <div class="title"><span class="tag">Style</span><h2>Layered (N‑tier) Architecture</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>Layered architecture organizes the system into horizontal layers where each layer only knows about and depends on the layers below it. This creates a clean separation of concerns and makes the system easier to understand, maintain, and test. It's the most common architectural pattern and serves as a good default for most applications.</p>
+        
+        <h4>Core Learning</h4>
+        <p>The key principle is <strong>dependency direction</strong>: upper layers depend on lower layers, never the reverse. This creates a natural flow from user interface down to data storage. Each layer has specific responsibilities and should only communicate with adjacent layers, creating clear boundaries and reducing coupling.</p>
+        
+        <h4>Traditional 4-Layer Architecture</h4>
+        <pre><button class="copy">Copy</button><code>┌─────────────────────────────────────┐
+│           Presentation Layer         │  ← Controllers, Views, DTOs
+├─────────────────────────────────────┤
+│           Application Layer          │  ← Use Cases, Application Services
+├─────────────────────────────────────┤
+│             Domain Layer             │  ← Business Logic, Entities, Rules
+├─────────────────────────────────────┤
+│          Infrastructure Layer        │  ← Data Access, External Services
+└─────────────────────────────────────┘
+
+// Dependency Direction: ↓ (Top to Bottom Only)
+// Data Flow: Both ↑ and ↓</code></pre>
+        
+        <h4>Layer Responsibilities</h4>
+        <div class="grid">
+          <div>
+            <h5>Presentation Layer</h5>
+            <ul>
+              <li><strong>Purpose:</strong> Handle user interactions and display data</li>
+              <li><strong>Contains:</strong> Controllers, Views, DTOs, View Models</li>
+              <li><strong>Responsibilities:</strong>
+                <ul>
+                  <li>Accept user input and validate format</li>
+                  <li>Transform domain objects to display format</li>
+                  <li>Handle HTTP requests/responses</li>
+                  <li>Authentication and basic authorization</li>
+                </ul>
+              </li>
+            </ul>
+            
+            <h5>Application Layer</h5>
+            <ul>
+              <li><strong>Purpose:</strong> Orchestrate business operations</li>
+              <li><strong>Contains:</strong> Application Services, Use Cases, Command Handlers</li>
+              <li><strong>Responsibilities:</strong>
+                <ul>
+                  <li>Coordinate domain objects</li>
+                  <li>Manage transactions</li>
+                  <li>Handle cross-cutting concerns (logging, security)</li>
+                  <li>Transform between layers</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h5>Domain Layer</h5>
+            <ul>
+              <li><strong>Purpose:</strong> Contain business logic and rules</li>
+              <li><strong>Contains:</strong> Entities, Value Objects, Domain Services, Business Rules</li>
+              <li><strong>Responsibilities:</strong>
+                <ul>
+                  <li>Enforce business rules and invariants</li>
+                  <li>Model the problem domain</li>
+                  <li>Contain no technical concerns</li>
+                  <li>Be technology-agnostic</li>
+                </ul>
+              </li>
+            </ul>
+            
+            <h5>Infrastructure Layer</h5>
+            <ul>
+              <li><strong>Purpose:</strong> Handle external concerns</li>
+              <li><strong>Contains:</strong> Repositories, External Services, Database Context</li>
+              <li><strong>Responsibilities:</strong>
+                <ul>
+                  <li>Data persistence and retrieval</li>
+                  <li>External API integrations</li>
+                  <li>File system operations</li>
+                  <li>Technical infrastructure</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>Implementation Example (C# .NET)</h4>
+        <pre><button class="copy">Copy</button><code>// 1. PRESENTATION LAYER
+[ApiController]
+[Route("api/[controller]")]
+public class OrdersController : ControllerBase {
+    private readonly IOrderApplicationService _orderService;
+    
+    public OrdersController(IOrderApplicationService orderService) {
+        _orderService = orderService;
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderRequest request) {
+        try {
+            var order = await _orderService.CreateOrderAsync(request);
+            return Ok(order.ToDto());
+        }
+        catch (InsufficientStockException ex) {
+            return BadRequest(ex.Message);
+        }
+    }
+}
+
+// 2. APPLICATION LAYER
+public class OrderApplicationService : IOrderApplicationService {
+    private readonly IOrderRepository _orderRepo;
+    private readonly IProductRepository _productRepo;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<OrderApplicationService> _logger;
+    
+    public OrderApplicationService(
+        IOrderRepository orderRepo,
+        IProductRepository productRepo,
+        IUnitOfWork unitOfWork,
+        ILogger<OrderApplicationService> logger) {
+        _orderRepo = orderRepo;
+        _productRepo = productRepo;
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+    }
+    
+    public async Task<Order> CreateOrderAsync(CreateOrderRequest request) {
+        _logger.LogInformation("Creating order for customer {CustomerId}", request.CustomerId);
+        
+        // Coordinate domain operations
+        var product = await _productRepo.GetByIdAsync(request.ProductId);
+        if (product == null) {
+            throw new ProductNotFoundException(request.ProductId);
+        }
+        
+        // Use domain logic
+        var order = Order.Create(request.CustomerId, product, request.Quantity);
+        
+        await _orderRepo.AddAsync(order);
+        await _unitOfWork.SaveChangesAsync();
+        
+        _logger.LogInformation("Order {OrderId} created successfully", order.Id);
+        return order;
+    }
+}
+
+// 3. DOMAIN LAYER
+public class Order {
+    public Guid Id { get; private set; }
+    public Guid CustomerId { get; private set; }
+    public List<OrderItem> Items { get; private set; } = new();
+    public decimal TotalAmount { get; private set; }
+    public OrderStatus Status { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+    
+    private Order() { } // For EF Core
+    
+    public static Order Create(Guid customerId, Product product, int quantity) {
+        // Business rule: Minimum order amount
+        if (product.Price * quantity < 10) {
+            throw new MinimumOrderAmountException("Order must be at least $10");
+        }
+        
+        // Business rule: Stock validation
+        if (!product.HasSufficientStock(quantity)) {
+            throw new InsufficientStockException($"Only {product.StockQuantity} items available");
+        }
+        
+        var order = new Order {
+            Id = Guid.NewGuid(),
+            CustomerId = customerId,
+            Status = OrderStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        order.AddItem(product, quantity);
+        return order;
+    }
+    
+    public void AddItem(Product product, int quantity) {
+        var item = new OrderItem(product.Id, product.Price, quantity);
+        Items.Add(item);
+        RecalculateTotal();
+    }
+    
+    private void RecalculateTotal() {
+        TotalAmount = Items.Sum(item => item.Price * item.Quantity);
+    }
+}
+
+// 4. INFRASTRUCTURE LAYER
+public class OrderRepository : IOrderRepository {
+    private readonly AppDbContext _context;
+    
+    public OrderRepository(AppDbContext context) {
+        _context = context;
+    }
+    
+    public async Task<Order?> GetByIdAsync(Guid id) {
+        return await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
+    }
+    
+    public async Task AddAsync(Order order) {
+        await _context.Orders.AddAsync(order);
+    }
+}
+
+public class AppDbContext : DbContext {
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder) {
+        modelBuilder.Entity<Order>()
+            .HasMany(o => o.Items)
+            .WithOne()
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}</code></pre>
+        
+        <h4>Benefits & Trade-offs</h4>
+        <div class="grid">
+          <div>
+            <h5>Benefits</h5>
+            <ul>
+              <li class="good"><strong>Clear Separation:</strong> Each layer has distinct responsibilities</li>
+              <li class="good"><strong>Testability:</strong> Easy to test each layer in isolation</li>
+              <li class="good"><strong>Maintainability:</strong> Changes in one layer don't affect others</li>
+              <li class="good"><strong>Team Organization:</strong> Different teams can work on different layers</li>
+              <li class="good"><strong>Technology Independence:</strong> Can change implementation of layers</li>
+            </ul>
+          </div>
+          <div>
+            <h5>Considerations</h5>
+            <ul>
+              <li class="warn"><strong>Performance:</strong> Multiple layers can add overhead</li>
+              <li class="warn"><strong>Complexity:</strong> Can be overkill for simple applications</li>
+              <li class="bad"><strong>Data Flow:</strong> Sometimes forces unnecessary data transformations</li>
+              <li class="warn"><strong>Rigid Structure:</strong> Can be too restrictive for some scenarios</li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>Common Variations</h4>
         <ul>
-          <li>Classic UI → Application → Domain → Infrastructure split.</li>
-          <li>Great default; enforce direction (top depends on bottom, not vice versa).</li>
+          <li><strong>3-Layer:</strong> Presentation, Business, Data Access (traditional enterprise)</li>
+          <li><strong>5-Layer:</strong> Add Cross-cutting layer for logging, security, etc.</li>
+          <li><strong>Onion/Clean Architecture:</strong> Invert dependencies to point inward to domain</li>
         </ul>
+        
+        <p class="note"><strong>Best Practice:</strong> Layered architecture works well as a starting point for most applications. As complexity grows, consider more sophisticated patterns like Hexagonal or Clean Architecture that provide better testability and flexibility.</p>
       </article>
 
       <article class="card topic" id="microservices" data-title="Microservices" data-category="Architecture Styles">
-        <div class="title"><span class="tag">Style</span><h2>Microservices</h2></div>
+        <div class="title"><span class="tag">Style</span><h2>Microservices Architecture</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>Microservices architecture is an approach where applications are built as a suite of small, independent services that communicate over well-defined APIs. Each service owns its data, runs in its own process, and can be developed, deployed, and scaled independently. This enables organizations to move faster and build more resilient systems.</p>
+        
+        <h4>Core Learning</h4>
+        <p>Microservices are not just a technical pattern - they're an organizational one. They work best when you have mature teams, robust DevOps practices, and clear business domain boundaries. The goal is <strong>team autonomy</strong> and <strong>business agility</strong>, not just technical benefits. Each service should align with a bounded context from domain-driven design.</p>
+        
+        <h4>Key Principles</h4>
         <ul>
-          <li>Autonomous services per <strong>bounded context</strong>; data per service.</li>
-          <li>Needs platform maturity: CI/CD, service mesh, centralized logs, tracing.</li>
+          <li><strong>Single Responsibility:</strong> Each service has one business responsibility</li>
+          <li><strong>Autonomous:</strong> Services can be developed, deployed, and scaled independently</li>
+          <li><strong>Decentralized:</strong> Each service manages its own data and business rules</li>
+          <li><strong>Fault Tolerant:</strong> Services must handle failures gracefully</li>
+          <li><strong>Observable:</strong> Comprehensive logging, monitoring, and tracing</li>
         </ul>
+        
+        <h4>Example Architecture</h4>
+        <pre><button class="copy">Copy</button><code>// E-Commerce Microservices Example
+
+┌───────────────────────────────────────────┐
+│                 API Gateway                     │
+├───────────────────────────────────────────┤
+│ User Service  │ Catalog Service │ Order Service  │
+│   - Auth      │   - Products    │   - Orders     │
+│   - Profile   │   - Search      │   - Inventory   │
+│   - UserDB    │   - CatalogDB   │   - OrderDB    │
+├─────────────┼───────────────┼──────────────┤
+│ Payment      │ Notification   │ Analytics     │
+│ Service      │ Service        │ Service       │
+│   - PaymentDB │   - Templates    │   - EventDB    │
+└─────────────┴───────────────┴──────────────┘
+
+              Message Bus (Kafka/RabbitMQ)
+
+// Each service:
+// - Has its own database
+// - Can be developed by different teams
+// - Scales independently
+// - Uses different technologies if needed</code></pre>
+        
+        <h4>Service Communication Patterns</h4>
+        <div class="grid">
+          <div>
+            <h5>Synchronous Communication</h5>
+            <ul>
+              <li><strong>REST APIs:</strong> HTTP-based, simple, widely supported</li>
+              <li><strong>GraphQL:</strong> Flexible queries, reduces over-fetching</li>
+              <li><strong>gRPC:</strong> High performance, type-safe, streaming support</li>
+            </ul>
+            
+            <pre><button class="copy">Copy</button><code>// REST API Example
+GET /api/orders/12345
+Response: {
+  "orderId": "12345",
+  "customerId": "user-789",
+  "items": [
+    {
+      "productId": "prod-456",
+      "quantity": 2,
+      "price": 29.99
+    }
+  ],
+  "status": "confirmed"
+}</code></pre>
+          </div>
+          
+          <div>
+            <h5>Asynchronous Communication</h5>
+            <ul>
+              <li><strong>Events:</strong> Domain events for business processes</li>
+              <li><strong>Commands:</strong> Direct service-to-service actions</li>
+              <li><strong>Message Queues:</strong> Reliable, decoupled communication</li>
+            </ul>
+            
+            <pre><button class="copy">Copy</button><code>// Event-Driven Example
+{
+  "eventType": "OrderPlaced",
+  "eventId": "evt-12345",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "data": {
+    "orderId": "12345",
+    "customerId": "user-789",
+    "totalAmount": 59.98
+  }
+}
+
+// Multiple services can react:
+// - Inventory: Reserve items
+// - Payment: Process payment
+// - Notification: Send confirmation</code></pre>
+          </div>
+        </div>
+        
+        <h4>Data Management Strategies</h4>
+        <ul>
+          <li><strong>Database per Service:</strong> Each service owns its data - no shared databases</li>
+          <li><strong>Saga Pattern:</strong> Manage distributed transactions across services</li>
+          <li><strong>Event Sourcing:</strong> Store events instead of current state</li>
+          <li><strong>CQRS:</strong> Separate read and write models</li>
+          <li><strong>Data Synchronization:</strong> Eventually consistent through events</li>
+        </ul>
+        
+        <h4>Implementation Example (Order Service in .NET)</h4>
+        <pre><button class="copy">Copy</button><code>// Domain Event
+public class OrderPlacedEvent : IDomainEvent {
+    public Guid OrderId { get; set; }
+    public Guid CustomerId { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime OccurredOn { get; set; } = DateTime.UtcNow;
+}
+
+// Order Service API
+[ApiController]
+[Route("api/[controller]")]
+public class OrdersController : ControllerBase {
+    private readonly IOrderService _orderService;
+    private readonly IEventBus _eventBus;
+    
+    [HttpPost]
+    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderCommand command) {
+        try {
+            var order = await _orderService.CreateOrderAsync(command);
+            
+            // Publish event for other services
+            var orderEvent = new OrderPlacedEvent {
+                OrderId = order.Id,
+                CustomerId = order.CustomerId,
+                TotalAmount = order.TotalAmount
+            };
+            
+            await _eventBus.PublishAsync(orderEvent);
+            
+            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order.ToDto());
+        }
+        catch (Exception ex) {
+            // Log error and return appropriate response
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+}
+
+// Event Handler in Payment Service
+public class OrderPlacedEventHandler : IEventHandler<OrderPlacedEvent> {
+    private readonly IPaymentService _paymentService;
+    private readonly ILogger<OrderPlacedEventHandler> _logger;
+    
+    public async Task HandleAsync(OrderPlacedEvent @event) {
+        _logger.LogInformation("Processing payment for order {OrderId}", @event.OrderId);
+        
+        try {
+            await _paymentService.ProcessPaymentAsync(
+                @event.CustomerId, 
+                @event.TotalAmount, 
+                @event.OrderId);
+                
+            _logger.LogInformation("Payment processed for order {OrderId}", @event.OrderId);
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Payment failed for order {OrderId}", @event.OrderId);
+            
+            // Publish compensation event
+            await PublishPaymentFailedEventAsync(@event.OrderId);
+        }
+    }
+}
+
+// Service Configuration
+public class Startup {
+    public void ConfigureServices(IServiceCollection services) {
+        // Database
+        services.AddDbContext<OrderDbContext>(options =>
+            options.UseSqlServer(connectionString));
+            
+        // Message Bus
+        services.AddSingleton<IEventBus, KafkaEventBus>();
+        
+        // Circuit Breaker for external calls
+        services.AddHttpClient<ICatalogService>()
+            .AddPolicyHandler(GetRetryPolicy())
+            .AddPolicyHandler(GetCircuitBreakerPolicy());
+            
+        // Health Checks
+        services.AddHealthChecks()
+            .AddDbContextCheck<OrderDbContext>()
+            .AddCheck<KafkaHealthCheck>("kafka");
+    }
+    
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy() {
+        return Policy.HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+            .WaitAndRetryAsync(3, retryAttempt => 
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+    }
+}</code></pre>
+        
+        <h4>Essential Infrastructure</h4>
+        <div class="grid">
+          <div>
+            <h5>DevOps Requirements</h5>
+            <ul>
+              <li class="good"><strong>CI/CD Pipelines:</strong> Automated build, test, deploy for each service</li>
+              <li class="good"><strong>Containerization:</strong> Docker containers for consistent deployment</li>
+              <li class="good"><strong>Orchestration:</strong> Kubernetes for service management</li>
+              <li class="good"><strong>Service Mesh:</strong> Istio/Linkerd for service communication</li>
+              <li class="good"><strong>Infrastructure as Code:</strong> Terraform/ARM templates</li>
+            </ul>
+          </div>
+          <div>
+            <h5>Observability Stack</h5>
+            <ul>
+              <li class="good"><strong>Distributed Tracing:</strong> Jaeger/Zipkin for request tracing</li>
+              <li class="good"><strong>Centralized Logging:</strong> ELK Stack or Cloud logging</li>
+              <li class="good"><strong>Metrics & Monitoring:</strong> Prometheus + Grafana</li>
+              <li class="good"><strong>Health Checks:</strong> Service health endpoints</li>
+              <li class="good"><strong>Alerting:</strong> PagerDuty/OpsGenie integration</li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>Benefits & Challenges</h4>
+        <div class="grid">
+          <div>
+            <h5>Benefits</h5>
+            <ul>
+              <li class="good"><strong>Team Autonomy:</strong> Teams can work independently</li>
+              <li class="good"><strong>Technology Diversity:</strong> Use best tool for each service</li>
+              <li class="good"><strong>Scalability:</strong> Scale services based on demand</li>
+              <li class="good"><strong>Fault Isolation:</strong> Service failures don't cascade</li>
+              <li class="good"><strong>Faster Deployment:</strong> Deploy services independently</li>
+            </ul>
+          </div>
+          <div>
+            <h5>Challenges</h5>
+            <ul>
+              <li class="bad"><strong>Distributed System Complexity:</strong> Network, latency, consistency issues</li>
+              <li class="bad"><strong>Data Management:</strong> No ACID transactions across services</li>
+              <li class="bad"><strong>Testing:</strong> Integration testing is much harder</li>
+              <li class="warn"><strong>Operational Overhead:</strong> More services to monitor and maintain</li>
+              <li class="warn"><strong>Service Dependencies:</strong> Complex service interactions</li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>When to Use Microservices</h4>
+        <ul>
+          <li><strong>Large teams</strong> (>20 developers) with clear domain expertise</li>
+          <li><strong>Mature DevOps practices</strong> with automated CI/CD and monitoring</li>
+          <li><strong>Different scalability requirements</strong> for different parts of the system</li>
+          <li><strong>Need for technology diversity</strong> or different release cycles</li>
+          <li><strong>Well-understood domain boundaries</strong> from Domain-Driven Design</li>
+        </ul>
+        
+        <p class="note"><strong>Conway's Law in Action:</strong> "Organizations design systems that mirror their communication structures." Microservices work best when your team structure aligns with your service boundaries. Start with clear team ownership and domain boundaries.</p>
       </article>
 
       <article class="card topic" id="eda" data-title="Event-Driven Architecture (EDA)" data-category="Architecture Styles">
@@ -1136,24 +2319,604 @@ jobs:
       <!-- ===== Scalability / Performance / Reliability ===== -->
       <article class="card topic" id="caching" data-title="Caching strategies (Redis etc.)" data-category="Scalability & Reliability">
         <div class="title"><span class="tag">Scalability</span><h2>Caching Strategies</h2></div>
-        <ul>
-          <li>In‑process (MemoryCache), distributed (Redis), HTTP caching (ETag/Cache‑Control).</li>
-          <li>Patterns: cache‑aside, read‑through, write‑behind, TTL & invalidation.</li>
-        </ul>
-        <pre><button class="copy">Copy</button><code>// .NET + Redis (StackExchange.Redis)
-var cached = await db.StringGetAsync(key);
-if (cached.IsNull) {
-  var value = await LoadFromDb();
-  await db.StringSetAsync(key, value, TimeSpan.FromMinutes(10));
+        
+        <h4>Key Concept</h4>
+        <p>Caching is a technique for storing frequently accessed data in a faster storage layer to reduce access time and database load. It's one of the most effective ways to improve system performance and scalability. The key is choosing the right caching strategy, location, and invalidation approach for your use case.</p>
+        
+        <h4>Core Learning</h4>
+        <p>Caching works on the principle of <strong>locality of reference</strong> - recently accessed data is likely to be accessed again soon. However, caching introduces complexity around data consistency and cache invalidation. As Phil Karlton said: "There are only two hard things in Computer Science: cache invalidation and naming things."</p>
+        
+        <h4>Types of Caching</h4>
+        <div class="grid">
+          <div>
+            <h5>By Location</h5>
+            <ul>
+              <li><strong>Browser Cache:</strong> Client-side caching of static assets</li>
+              <li><strong>CDN Cache:</strong> Geographic distribution of static content</li>
+              <li><strong>Reverse Proxy:</strong> Nginx/Varnish for full page caching</li>
+              <li><strong>Application Cache:</strong> In-process memory caching</li>
+              <li><strong>Distributed Cache:</strong> Redis/Memcached across servers</li>
+              <li><strong>Database Cache:</strong> Query result caching in DBMS</li>
+            </ul>
+          </div>
+          <div>
+            <h5>By Data Type</h5>
+            <ul>
+              <li><strong>Page/Fragment Cache:</strong> Complete HTML responses</li>
+              <li><strong>Object Cache:</strong> Serialized business objects</li>
+              <li><strong>Query Cache:</strong> Database query results</li>
+              <li><strong>Computed Cache:</strong> Expensive calculation results</li>
+              <li><strong>Session Cache:</strong> User session data</li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>Caching Patterns</h4>
+        
+        <h5>1. Cache-Aside (Lazy Loading)</h5>
+        <pre><button class="copy">Copy</button><code>// Cache-Aside Pattern in C# with Redis
+public class ProductService {
+    private readonly IDatabase _cache;
+    private readonly IProductRepository _repository;
+    
+    public ProductService(IDatabase cache, IProductRepository repository) {
+        _cache = cache;
+        _repository = repository;
+    }
+    
+    public async Task<Product> GetProductAsync(int productId) {
+        string cacheKey = $"product:{productId}";
+        
+        // 1. Try to get from cache first
+        var cached = await _cache.StringGetAsync(cacheKey);
+        if (cached.HasValue) {
+            return JsonSerializer.Deserialize<Product>(cached);
+        }
+        
+        // 2. Cache miss - load from database
+        var product = await _repository.GetByIdAsync(productId);
+        if (product != null) {
+            // 3. Store in cache for future requests
+            var serialized = JsonSerializer.Serialize(product);
+            await _cache.StringSetAsync(cacheKey, serialized, TimeSpan.FromMinutes(15));
+        }
+        
+        return product;
+    }
+    
+    public async Task UpdateProductAsync(Product product) {
+        // Update database
+        await _repository.UpdateAsync(product);
+        
+        // Invalidate cache
+        string cacheKey = $"product:{product.Id}";
+        await _cache.KeyDeleteAsync(cacheKey);
+    }
 }</code></pre>
+        
+        <h5>2. Write-Through Cache</h5>
+        <pre><button class="copy">Copy</button><code>// Write-Through: Write to cache and database simultaneously
+public async Task UpdateProductAsync(Product product) {
+    // Write to database first
+    await _repository.UpdateAsync(product);
+    
+    // Update cache
+    string cacheKey = $"product:{product.Id}";
+    var serialized = JsonSerializer.Serialize(product);
+    await _cache.StringSetAsync(cacheKey, serialized, TimeSpan.FromMinutes(15));
+}</code></pre>
+        
+        <h5>3. Write-Behind (Write-Back) Cache</h5>
+        <pre><button class="copy">Copy</button><code>// Write-Behind: Write to cache immediately, database asynchronously
+public async Task UpdateProductAsync(Product product) {
+    // Write to cache immediately
+    string cacheKey = $"product:{product.Id}";
+    var serialized = JsonSerializer.Serialize(product);
+    await _cache.StringSetAsync(cacheKey, serialized, TimeSpan.FromMinutes(15));
+    
+    // Queue for background database update
+    await _backgroundTaskQueue.QueueBackgroundWorkItemAsync(async token => {
+        await _repository.UpdateAsync(product);
+    });
+}</code></pre>
+        
+        <h4>Advanced Caching Techniques</h4>
+        
+        <h5>Cache Warming</h5>
+        <pre><button class="copy">Copy</button><code>// Pre-populate cache with frequently accessed data
+public class CacheWarmupService : IHostedService {
+    private readonly IProductService _productService;
+    private readonly ILogger<CacheWarmupService> _logger;
+    
+    public async Task StartAsync(CancellationToken cancellationToken) {
+        _logger.LogInformation("Starting cache warmup...");
+        
+        // Load top 100 most popular products into cache
+        var popularProducts = await _productRepository.GetMostPopularAsync(100);
+        
+        foreach (var product in popularProducts) {
+            await _productService.GetProductAsync(product.Id); // This will cache it
+        }
+        
+        _logger.LogInformation("Cache warmup completed");
+    }
+}</code></pre>
+        
+        <h5>Cache Stampede Protection</h5>
+        <pre><button class="copy">Copy</button><code>// Prevent multiple threads from loading same data simultaneously
+public class ProductService {
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+    private readonly MemoryCache _localCache = new MemoryCache(new MemoryCacheOptions());
+    
+    public async Task<Product> GetProductAsync(int productId) {
+        string cacheKey = $"product:{productId}";
+        
+        // Check local cache first (fastest)
+        if (_localCache.TryGetValue(cacheKey, out Product cachedProduct)) {
+            return cachedProduct;
+        }
+        
+        // Use semaphore to prevent cache stampede
+        await _semaphore.WaitAsync();
+        try {
+            // Double-check after acquiring lock
+            if (_localCache.TryGetValue(cacheKey, out cachedProduct)) {
+                return cachedProduct;
+            }
+            
+            // Load from distributed cache or database
+            var product = await LoadProductAsync(productId);
+            
+            // Cache locally for 5 minutes
+            _localCache.Set(cacheKey, product, TimeSpan.FromMinutes(5));
+            
+            return product;
+        }
+        finally {
+            _semaphore.Release();
+        }
+    }
+}</code></pre>
+        
+        <h4>HTTP Caching</h4>
+        <pre><button class="copy">Copy</button><code>// HTTP caching headers in ASP.NET Core
+[HttpGet("{id}")]
+[ResponseCache(Duration = 300)] // 5 minutes
+public async Task<ActionResult<ProductDto>> GetProduct(int id) {
+    var product = await _productService.GetProductAsync(id);
+    if (product == null) {
+        return NotFound();
+    }
+    
+    // Set ETag for conditional requests
+    var etag = GenerateETag(product);
+    Response.Headers.ETag = etag;
+    
+    // Check if client has current version
+    if (Request.Headers.IfNoneMatch.Contains(etag)) {
+        return StatusCode(304); // Not Modified
+    }
+    
+    return Ok(product.ToDto());
+}
+
+// Vary cache by user for personalized content
+[ResponseCache(Duration = 60, VaryByHeader = "Authorization")]
+public async Task<ActionResult> GetUserDashboard() {
+    // Cached per user for 1 minute
+    var userId = GetCurrentUserId();
+    var dashboard = await _dashboardService.GetUserDashboardAsync(userId);
+    return Ok(dashboard);
+}</code></pre>
+        
+        <h4>Cache Configuration & Monitoring</h4>
+        <pre><button class="copy">Copy</button><code>// Redis configuration with monitoring
+services.AddStackExchangeRedisCache(options => {
+    options.Configuration = "localhost:6379";
+    options.ConfigurationOptions = new ConfigurationOptions {
+        EndPoints = { "localhost:6379" },
+        AbortOnConnectFail = false,
+        ConnectRetry = 3,
+        ConnectTimeout = 5000,
+        SyncTimeout = 5000,
+        AsyncTimeout = 5000
+    };
+});
+
+// Cache metrics and monitoring
+public class CacheMetrics {
+    private readonly IMetrics _metrics;
+    
+    public void RecordCacheHit(string cacheType) {
+        _metrics.IncrementCounter("cache.hits", new[] { ("type", cacheType) });
+    }
+    
+    public void RecordCacheMiss(string cacheType) {
+        _metrics.IncrementCounter("cache.misses", new[] { ("type", cacheType) });
+    }
+    
+    public void RecordCacheLatency(string cacheType, TimeSpan duration) {
+        _metrics.RecordHistogram("cache.latency", duration.TotalMilliseconds, 
+            new[] { ("type", cacheType) });
+    }
+}</code></pre>
+        
+        <h4>Cache Invalidation Strategies</h4>
+        <div class="grid">
+          <div>
+            <h5>Time-Based (TTL)</h5>
+            <ul>
+              <li class="good"><strong>Simple:</strong> Set expiration time</li>
+              <li class="warn"><strong>Approximate:</strong> May serve stale data</li>
+              <li><strong>Use for:</strong> Relatively static data</li>
+            </ul>
+          </div>
+          <div>
+            <h5>Event-Based</h5>
+            <ul>
+              <li class="good"><strong>Accurate:</strong> Invalidate on data changes</li>
+              <li class="bad"><strong>Complex:</strong> Need to track dependencies</li>
+              <li><strong>Use for:</strong> Critical data consistency</li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>Best Practices</h4>
+        <ul>
+          <li><strong>Cache High-Read, Low-Write Data:</strong> Best ROI for caching effort</li>
+          <li><strong>Use Cache Keys Wisely:</strong> Include version/timestamp in keys</li>
+          <li><strong>Monitor Cache Hit Ratios:</strong> Aim for 80%+ hit ratio</li>
+          <li><strong>Set Appropriate TTLs:</strong> Balance freshness vs performance</li>
+          <li><strong>Handle Cache Failures Gracefully:</strong> Always have a fallback</li>
+          <li><strong>Use Compression:</strong> For large objects in distributed cache</li>
+        </ul>
+        
+        <h4>Common Anti-patterns</h4>
+        <ul>
+          <li class="bad"><strong>Cache Everything:</strong> Wastes memory and complicates invalidation</li>
+          <li class="bad"><strong>Infinite TTLs:</strong> Leads to stale data</li>
+          <li class="bad"><strong>Synchronous Cache Population:</strong> Blocks user requests</li>
+          <li class="bad"><strong>No Monitoring:</strong> Can't optimize without metrics</li>
+        </ul>
+        
+        <p class="note"><strong>Performance Tip:</strong> Use multi-level caching (L1: in-process, L2: distributed) for optimal performance. Local cache provides nanosecond access, while distributed cache provides consistency across instances.</p>
       </article>
 
       <article class="card topic" id="load-balancing" data-title="Load balancing & traffic management" data-category="Scalability & Reliability">
         <div class="title"><span class="tag">Scalability</span><h2>Load Balancing & Traffic Management</h2></div>
+        
+        <h4>Key Concept</h4>
+        <p>Load balancing distributes incoming requests across multiple servers to optimize resource utilization, maximize throughput, minimize response time, and avoid overload. It's essential for building scalable and highly available systems that can handle traffic spikes and server failures gracefully.</p>
+        
+        <h4>Core Learning</h4>
+        <p>Load balancers work at different layers of the network stack and use various algorithms to distribute traffic. The choice depends on your application characteristics, traffic patterns, and availability requirements. Modern load balancers also provide traffic management features like SSL termination, request routing, and health checks.</p>
+        
+        <h4>Types of Load Balancers</h4>
+        <div class="grid">
+          <div>
+            <h5>Layer 4 (Transport) Load Balancer</h5>
+            <ul>
+              <li><strong>Works at:</strong> TCP/UDP level</li>
+              <li><strong>Routes by:</strong> IP address and port</li>
+              <li><strong>Pros:</strong> Fast, low latency, protocol agnostic</li>
+              <li><strong>Cons:</strong> No application-level intelligence</li>
+              <li><strong>Examples:</strong> AWS NLB, HAProxy (TCP mode)</li>
+            </ul>
+          </div>
+          <div>
+            <h5>Layer 7 (Application) Load Balancer</h5>
+            <ul>
+              <li><strong>Works at:</strong> HTTP/HTTPS level</li>
+              <li><strong>Routes by:</strong> URL, headers, cookies, content</li>
+              <li><strong>Pros:</strong> Smart routing, SSL termination, caching</li>
+              <li><strong>Cons:</strong> Higher latency, more CPU intensive</li>
+              <li><strong>Examples:</strong> AWS ALB, Nginx, Envoy, Traefik</li>
+            </ul>
+          </div>
+        </div>
+        
+        <h4>Load Balancing Algorithms</h4>
+        <pre><button class="copy">Copy</button><code>// Common Load Balancing Algorithms
+
+1. Round Robin
+   Request 1 → Server A
+   Request 2 → Server B  
+   Request 3 → Server C
+   Request 4 → Server A (cycle repeats)
+
+2. Weighted Round Robin
+   Server A (weight: 3) gets 3 requests
+   Server B (weight: 2) gets 2 requests  
+   Server C (weight: 1) gets 1 request
+
+3. Least Connections
+   Route to server with fewest active connections
+   
+4. Least Response Time
+   Route to server with fastest average response
+   
+5. IP Hash / Sticky Sessions
+   hash(client_ip) % server_count
+   Ensures same client always goes to same server
+   
+6. Resource Based
+   Route based on CPU, memory, or custom metrics</code></pre>
+        
+        <h4>Nginx Load Balancer Configuration</h4>
+        <pre><button class="copy">Copy</button><code># /etc/nginx/nginx.conf
+upstream backend_servers {
+    # Health check
+    server 10.0.1.10:8080 weight=3 max_fails=3 fail_timeout=30s;
+    server 10.0.1.11:8080 weight=2 max_fails=3 fail_timeout=30s;
+    server 10.0.1.12:8080 weight=1 max_fails=3 fail_timeout=30s;
+    
+    # Session persistence (optional)
+    # ip_hash;
+    
+    # Least connections
+    least_conn;
+}
+
+server {
+    listen 80;
+    server_name myapp.com;
+    
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    
+    location / {
+        # Apply rate limit
+        limit_req zone=api burst=20 nodelay;
+        
+        # Proxy settings
+        proxy_pass http://backend_servers;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Timeouts
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Connection pooling
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+    
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "OK";
+    }
+}</code></pre>
+        
+        <h4>Advanced Traffic Management</h4>
+        
+        <h5>Blue-Green Deployment</h5>
+        <pre><button class="copy">Copy</button><code># Blue-Green deployment with Nginx
+upstream blue_env {
+    server 10.0.1.10:8080;
+    server 10.0.1.11:8080;
+}
+
+upstream green_env {
+    server 10.0.2.10:8080;
+    server 10.0.2.11:8080;
+}
+
+server {
+    listen 80;
+    server_name myapp.com;
+    
+    location / {
+        # Switch traffic by changing this line
+        proxy_pass http://blue_env;  # or http://green_env
+        
+        # Health check both environments
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+        proxy_set_header Host $host;
+    }
+}</code></pre>
+        
+        <h5>Canary Releases</h5>
+        <pre><button class="copy">Copy</button><code># Canary deployment: 90% to stable, 10% to canary
+upstream stable {
+    server 10.0.1.10:8080;
+    server 10.0.1.11:8080;
+}
+
+upstream canary {
+    server 10.0.2.10:8080;
+}
+
+server {
+    listen 80;
+    server_name myapp.com;
+    
+    location / {
+        # Use split_clients for percentage-based routing
+        set $upstream stable;
+        if ($cookie_canary = "true") {
+            set $upstream canary;
+        }
+        # 10% random traffic to canary
+        if ($request_id ~ "^[0-9]$") {
+            set $upstream canary;
+        }
+        
+        proxy_pass http://$upstream;
+        proxy_set_header Host $host;
+    }
+}</code></pre>
+        
+        <h4>Circuit Breaker Pattern</h4>
+        <pre><button class="copy">Copy</button><code>// Circuit Breaker with Polly in C#
+using Polly;
+using Polly.CircuitBreaker;
+
+public class ExternalApiService {
+    private readonly HttpClient _httpClient;
+    private readonly IAsyncPolicy<HttpResponseMessage> _circuitBreakerPolicy;
+    
+    public ExternalApiService(HttpClient httpClient) {
+        _httpClient = httpClient;
+        
+        // Circuit breaker configuration
+        _circuitBreakerPolicy = Policy
+            .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+            .Or<HttpRequestException>()
+            .CircuitBreakerAsync(
+                handledEventsAllowedBeforeBreaking: 5,  // Fail 5 times
+                durationOfBreak: TimeSpan.FromMinutes(1), // Stay open for 1 minute
+                onBreak: (exception, duration) => {
+                    Console.WriteLine($"Circuit breaker opened for {duration}");
+                },
+                onReset: () => {
+                    Console.WriteLine("Circuit breaker reset");
+                });
+    }
+    
+    public async Task<ApiResponse> CallExternalApiAsync(string endpoint) {
+        try {
+            var response = await _circuitBreakerPolicy.ExecuteAsync(async () => {
+                return await _httpClient.GetAsync(endpoint);
+            });
+            
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ApiResponse>(content);
+        }
+        catch (CircuitBreakerOpenException) {
+            // Return cached data or default response
+            return await GetFallbackResponseAsync();
+        }
+    }
+}</code></pre>
+        
+        <h4>Rate Limiting Strategies</h4>
+        <div class="grid">
+          <div>
+            <h5>Token Bucket</h5>
+            <pre><button class="copy">Copy</button><code>public class TokenBucketRateLimiter {
+    private readonly int _capacity;
+    private readonly int _refillRate;
+    private int _tokens;
+    private DateTime _lastRefill;
+    private readonly object _lock = new object();
+    
+    public TokenBucketRateLimiter(int capacity, int refillRate) {
+        _capacity = capacity;
+        _refillRate = refillRate;
+        _tokens = capacity;
+        _lastRefill = DateTime.UtcNow;
+    }
+    
+    public bool TryConsume(int tokensRequired = 1) {
+        lock (_lock) {
+            RefillTokens();
+            
+            if (_tokens >= tokensRequired) {
+                _tokens -= tokensRequired;
+                return true;
+            }
+            return false;
+        }
+    }
+    
+    private void RefillTokens() {
+        var now = DateTime.UtcNow;
+        var elapsed = now - _lastRefill;
+        var tokensToAdd = (int)(elapsed.TotalSeconds * _refillRate);
+        
+        if (tokensToAdd > 0) {
+            _tokens = Math.Min(_capacity, _tokens + tokensToAdd);
+            _lastRefill = now;
+        }
+    }
+}</code></pre>
+          </div>
+          <div>
+            <h5>Sliding Window</h5>
+            <pre><button class="copy">Copy</button><code>public class SlidingWindowRateLimiter {
+    private readonly int _maxRequests;
+    private readonly TimeSpan _windowSize;
+    private readonly Queue<DateTime> _requests;
+    private readonly object _lock = new object();
+    
+    public SlidingWindowRateLimiter(int maxRequests, TimeSpan windowSize) {
+        _maxRequests = maxRequests;
+        _windowSize = windowSize;
+        _requests = new Queue<DateTime>();
+    }
+    
+    public bool TryAcquire() {
+        lock (_lock) {
+            var now = DateTime.UtcNow;
+            var cutoff = now - _windowSize;
+            
+            // Remove old requests
+            while (_requests.Count > 0 && _requests.Peek() < cutoff) {
+                _requests.Dequeue();
+            }
+            
+            if (_requests.Count < _maxRequests) {
+                _requests.Enqueue(now);
+                return true;
+            }
+            return false;
+        }
+    }
+}</code></pre>
+          </div>
+        </div>
+        
+        <h4>Health Checks</h4>
+        <pre><button class="copy">Copy</button><code>// ASP.NET Core health checks
+public class Startup {
+    public void ConfigureServices(IServiceCollection services) {
+        services.AddHealthChecks()
+            .AddCheck("database", new DatabaseHealthCheck())
+            .AddCheck("external-api", new ExternalApiHealthCheck())
+            .AddCheck("memory", () => {
+                var allocated = GC.GetTotalMemory(forceFullCollection: false);
+                var threshold = 1024 * 1024 * 1024; // 1GB
+                return allocated < threshold ? 
+                    HealthCheckResult.Healthy() : 
+                    HealthCheckResult.Unhealthy($"Memory usage: {allocated}");
+            });
+    }
+    
+    public void Configure(IApplicationBuilder app) {
+        app.UseHealthChecks("/health", new HealthCheckOptions {
+            ResponseWriter = async (context, report) => {
+                context.Response.ContentType = "application/json";
+                var response = new {
+                    status = report.Status.ToString(),
+                    checks = report.Entries.Select(x => new {
+                        name = x.Key,
+                        status = x.Value.Status.ToString(),
+                        exception = x.Value.Exception?.Message,
+                        duration = x.Value.Duration.ToString()
+                    })
+                };
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            }
+        });
+    }
+}</code></pre>
+        
+        <h4>Best Practices</h4>
         <ul>
-          <li>L4/L7 balancing (Nginx, Envoy), blue/green & canary releases.</li>
-          <li>Rate limiting, circuit breakers (Polly), backoff & jitter.</li>
+          <li><strong>Use Health Checks:</strong> Remove unhealthy servers from rotation automatically</li>
+          <li><strong>Implement Graceful Degradation:</strong> Serve cached/simplified responses when backends fail</li>
+          <li><strong>Monitor Metrics:</strong> Track response times, error rates, connection counts</li>
+          <li><strong>SSL Termination:</strong> Offload SSL processing to load balancer</li>
+          <li><strong>Connection Pooling:</strong> Reuse connections to reduce overhead</li>
+          <li><strong>Sticky Sessions When Needed:</strong> But prefer stateless applications</li>
         </ul>
+        
+        <p class="note"><strong>Cloud Native Tip:</strong> Modern service meshes like Istio provide advanced traffic management features including retries, timeouts, circuit breakers, and observability out of the box.</p>
       </article>
 
       <article class="card topic" id="db-scaling" data-title="Database scaling: Sharding/Replication/Partitioning" data-category="Scalability & Reliability">
@@ -1382,6 +3145,10 @@ flowchart LR
     const $ = (sel, ctx=document) => ctx.querySelector(sel);
     const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
 
+    // Mobile responsive state
+    let isMobileView = () => window.innerWidth < 980;
+    let isTabletView = () => window.innerWidth >= 768 && window.innerWidth < 980;
+    
     // Attach copy buttons to code blocks
     function attachCopy(){
       $$("pre").forEach(pre => {
@@ -1389,9 +3156,89 @@ flowchart LR
         if(!btn) return;
         btn.addEventListener('click', async () => {
           const code = pre.querySelector('code').innerText;
-          try{ await navigator.clipboard.writeText(code); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1200);}catch{btn.textContent='Error';}
+          try{ 
+            await navigator.clipboard.writeText(code); 
+            btn.textContent='Copied!'; 
+            setTimeout(()=>btn.textContent='Copy',1200);
+          }catch{
+            btn.textContent='Error';
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setTimeout(()=>btn.textContent='Copy',1200);
+          }
         });
       });
+    }
+
+    // Mobile menu toggle
+    function initMobileMenu() {
+      const mobileToggle = $('#mobileMenuToggle');
+      const filtersMenu = $('#filtersMenu');
+      
+      if (mobileToggle && filtersMenu) {
+        mobileToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          filtersMenu.classList.toggle('hidden');
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!filtersMenu.contains(e.target) && !mobileToggle.contains(e.target)) {
+            filtersMenu.classList.add('hidden');
+          }
+        });
+      }
+    }
+    
+    // Mobile sidebar toggle
+    function initMobileSidebar() {
+      const sidebarToggle = $('#sidebarToggle');
+      const sidebarContent = $('#sidebarContent');
+      
+      if (sidebarToggle && sidebarContent) {
+        sidebarToggle.addEventListener('click', () => {
+          const isActive = sidebarContent.classList.contains('active');
+          sidebarContent.classList.toggle('active', !isActive);
+          sidebarToggle.classList.toggle('active', !isActive);
+        });
+        
+        // Auto-expand on desktop
+        function handleResize() {
+          if (!isMobileView()) {
+            sidebarContent.classList.add('active');
+            sidebarToggle.classList.add('active');
+          } else {
+            sidebarContent.classList.remove('active');
+            sidebarToggle.classList.remove('active');
+          }
+        }
+        
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial call
+      }
+    }
+    
+    // Responsive filters visibility
+    function handleResponsiveFilters() {
+      const filtersMenu = $('#filtersMenu');
+      
+      function updateFiltersVisibility() {
+        if (isMobileView()) {
+          // On mobile, hide filters by default
+          filtersMenu.classList.add('hidden');
+        } else {
+          // On desktop/tablet, always show filters
+          filtersMenu.classList.remove('hidden');
+        }
+      }
+      
+      window.addEventListener('resize', updateFiltersVisibility);
+      updateFiltersVisibility(); // Initial call
     }
 
     // Build topic buttons from articles
@@ -1400,10 +3247,15 @@ flowchart LR
       // Sort by category then title
       topics.sort((a,b)=> (a.category||'').localeCompare(b.category||'') || a.title.localeCompare(b.title));
 
-      const strip = $("#topicStrip"); strip.innerHTML = '';
+      const strip = $("#topicStrip"); 
+      strip.innerHTML = '';
+      
       topics.forEach(t => {
         const btn = document.createElement('button');
-        btn.className = 'topic-btn chip'; btn.textContent = t.title; btn.dataset.id = t.id; btn.dataset.category = t.category;
+        btn.className = 'topic-btn chip'; 
+        btn.textContent = t.title; 
+        btn.dataset.id = t.id; 
+        btn.dataset.category = t.category;
         btn.addEventListener('click', ()=> showTopic(t.id, true));
         strip.appendChild(btn);
       });
@@ -1411,7 +3263,7 @@ flowchart LR
       // Category filter
       const cats = Array.from(new Set(topics.map(t=>t.category))).sort();
       const catSel = $("#categoryFilter");
-      catSel.innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+      catSel.innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
       catSel.addEventListener('change', () => applyFilters());
 
       // Sidebar (subtopics for current category)
@@ -1425,8 +3277,23 @@ flowchart LR
       const filtered = topics.filter(t => !cat || t.category === cat);
       $('#sideTitle').textContent = cat ? `${cat} — Subtopics` : 'All Subtopics';
       side.innerHTML = '';
+      
       filtered.forEach(t => {
-        const a = document.createElement('a'); a.href = '#'; a.textContent = t.title; a.className='sidelink'; a.addEventListener('click', (e)=>{e.preventDefault(); showTopic(t.id, true);});
+        const a = document.createElement('a'); 
+        a.href = '#'; 
+        a.textContent = t.title; 
+        a.className='sidelink'; 
+        a.addEventListener('click', (e)=>{
+          e.preventDefault(); 
+          showTopic(t.id, true);
+          // Close mobile sidebar after selection
+          if (isMobileView()) {
+            const sidebarContent = $('#sidebarContent');
+            const sidebarToggle = $('#sidebarToggle');
+            sidebarContent.classList.remove('active');
+            sidebarToggle.classList.remove('active');
+          }
+        });
         side.appendChild(a);
       });
     }
@@ -1434,24 +3301,42 @@ flowchart LR
     function applyFilters(){
       const term = $('#search').value.trim().toLowerCase();
       const cat = $('#categoryFilter').value;
+      
       $$('#topicStrip .topic-btn').forEach(b => {
         const matchTerm = !term || b.textContent.toLowerCase().includes(term);
         const matchCat = !cat || b.dataset.category === cat;
         b.classList.toggle('hidden', !(matchTerm && matchCat));
       });
+      
       buildSidebar(cat);
       localStorage.setItem('lastCat', cat||'');
+      
+      // Close mobile menu after applying filters
+      if (isMobileView()) {
+        $('#filtersMenu').classList.add('hidden');
+      }
     }
 
     // Show a single topic; optionally scroll to top
     function showTopic(id, remember){
       $$('.topic').forEach(t => t.classList.add('hidden'));
-      const el = document.getElementById(id); if(!el) return;
+      const el = document.getElementById(id); 
+      if(!el) return;
+      
       el.classList.remove('hidden');
       $$('#sideList .sidelink').forEach(a=> a.classList.toggle('active', a.textContent === el.dataset.title));
       $$('#topicStrip .topic-btn').forEach(b=> b.classList.toggle('chip-active', b.dataset.id===id));
-      if(remember){ localStorage.setItem('lastTopic', id); }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      if(remember){ 
+        localStorage.setItem('lastTopic', id); 
+      }
+      
+      // Smooth scroll to top with offset for fixed header
+      const headerHeight = $('header').offsetHeight || 100;
+      window.scrollTo({ 
+        top: isMobileView() ? headerHeight : 0, 
+        behavior: 'smooth' 
+      });
     }
 
     // Print current topic
@@ -1462,22 +3347,125 @@ flowchart LR
     // Expand/Collapse controls
     $('#expandAllBtn').addEventListener('click', ()=>{
       $$('.topic').forEach(t => t.classList.remove('hidden'));
+      // Close mobile menu
+      if (isMobileView()) {
+        $('#filtersMenu').classList.add('hidden');
+      }
     });
+    
     $('#collapseAllBtn').addEventListener('click', ()=>{
       const id = localStorage.getItem('lastTopic') || 'fundamentals';
       showTopic(id, false);
+      // Close mobile menu
+      if (isMobileView()) {
+        $('#filtersMenu').classList.add('hidden');
+      }
     });
 
-    // Search handlers
-    $('#search').addEventListener('keypress', (e)=>{ if(e.key==='Enter'){ applyFilters(); const firstVisible=$$('#topicStrip .topic-btn:not(.hidden)')[0]; if(firstVisible){ showTopic(firstVisible.dataset.id, true); }} });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='/' && document.activeElement.tagName!=='INPUT'){ e.preventDefault(); $('#search').focus(); }});
-
-    // Initialize
-    attachCopy();
-    buildNav();
-    applyFilters();
-    const last = localStorage.getItem('lastTopic') || 'fundamentals';
-    showTopic(last, false);
+    // Enhanced search handlers
+    $('#search').addEventListener('input', () => {
+      // Real-time search on desktop, debounced on mobile
+      if (!isMobileView()) {
+        applyFilters();
+      }
+    });
+    
+    $('#search').addEventListener('keypress', (e)=>{ 
+      if(e.key==='Enter'){ 
+        e.preventDefault();
+        applyFilters(); 
+        const firstVisible=$$('#topicStrip .topic-btn:not(.hidden)')[0]; 
+        if(firstVisible){ 
+          showTopic(firstVisible.dataset.id, true); 
+        }
+        // Blur search on mobile to hide keyboard
+        if (isMobileView()) {
+          $('#search').blur();
+        }
+      } 
+    });
+    
+    // Focus search with '/' key (desktop only)
+    document.addEventListener('keydown', (e)=>{ 
+      if(e.key==='/' && document.activeElement.tagName!=='INPUT' && !isMobileView()){ 
+        e.preventDefault(); 
+        $('#search').focus(); 
+      }
+    });
+    
+    // Touch-friendly interactions
+    function initTouchSupport() {
+      // Add touch feedback to buttons
+      $$('button, .chip, .sidelink').forEach(el => {
+        el.addEventListener('touchstart', () => {
+          el.style.transform = 'scale(0.95)';
+        });
+        
+        el.addEventListener('touchend', () => {
+          setTimeout(() => {
+            el.style.transform = '';
+          }, 150);
+        });
+      });
+      
+      // Prevent zoom on double-tap for iOS
+      document.addEventListener('touchend', (e) => {
+        const now = new Date().getTime();
+        if (now - (window.lastTouchEnd || 0) <= 300) {
+          e.preventDefault();
+        }
+        window.lastTouchEnd = now;
+      }, false);
+    }
+    
+    // Performance optimization: Intersection Observer for topic visibility
+    function initIntersectionObserver() {
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              // Lazy load any heavy content if needed
+              entry.target.classList.add('visible');
+            }
+          });
+        }, { threshold: 0.1 });
+        
+        $$('.topic').forEach(topic => observer.observe(topic));
+      }
+    }
+    
+    // Initialize everything
+    function init() {
+      attachCopy();
+      buildNav();
+      initMobileMenu();
+      initMobileSidebar();
+      handleResponsiveFilters();
+      initTouchSupport();
+      initIntersectionObserver();
+      applyFilters();
+      
+      const last = localStorage.getItem('lastTopic') || 'fundamentals';
+      showTopic(last, false);
+      
+      // Add loaded class to body for CSS transitions
+      document.body.classList.add('loaded');
+    }
+    
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+    
+    // Handle orientation changes on mobile
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        // Recalculate layout after orientation change
+        handleResponsiveFilters();
+      }, 100);
+    });
   </script>
 </body>
 </html>
